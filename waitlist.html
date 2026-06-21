@@ -257,8 +257,12 @@ body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-fon
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8.5 3L5 7l3.5 4"/></svg>
       Back to home
     </a>
+    <a href="login.html" id="navAuthBtn" style="font-size:13px;font-weight:600;color:rgba(255,255,255,.55);margin-left:16px;text-decoration:none;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.color='rgba(255,255,255,.55)'">Sign in →</a>
   </div>
 </nav>
+<script>
+(function(){try{var s=JSON.parse(localStorage.getItem('aisc_session'));if(s&&s.email){var b=document.getElementById('navAuthBtn');b.textContent='Dashboard →';b.href='dashboard.html';}}catch(e){}}());
+</script>
 
 <!-- PROGRESS -->
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>

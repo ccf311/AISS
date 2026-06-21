@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — AI Security Scorecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660;
+  --orange:#E86A27; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --blue:#2D7DD2; --blue-lt:#EBF4FF;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F9FAFB; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--body);color:var(--slate);-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
+
+/* ── Left panel ── */
+.left-panel{width:52%;background:var(--navy);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:56px 64px}
+.left-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(232,106,39,.09),transparent)}
+.lp-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none}
+.lp-content{position:relative;z-index:1}
+.lp-logo{display:flex;align-items:center;gap:10px;margin-bottom:52px}
+.logo-mark{width:36px;height:36px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:16px;color:var(--white)}
+.logo-name{font-family:var(--display);font-size:15px;font-weight:700;color:var(--white)}
+.lp-headline{font-family:var(--display);font-size:clamp(24px,2.5vw,34px);font-weight:700;color:var(--white);line-height:1.15;letter-spacing:-.02em;margin-bottom:14px}
+.lp-headline em{font-style:normal;color:var(--orange)}
+.lp-sub{font-size:15px;color:rgba(255,255,255,.45);line-height:1.65;margin-bottom:40px;max-width:380px}
+
+/* ── Live portfolio preview ── */
+.portfolio-preview{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;margin-bottom:32px}
+.pp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.pp-title{font-family:var(--display);font-size:13px;font-weight:600;color:rgba(255,255,255,.6)}
+.pp-badge{font-family:var(--display);font-size:10px;font-weight:700;background:rgba(29,158,117,.2);color:var(--green);border:1px solid rgba(29,158,117,.25);padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.live-dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pp-rows{display:flex;flex-direction:column;gap:10px}
+.pp-row{display:flex;align-items:center;gap:10px}
+.pp-logo{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:10px;font-weight:700;color:var(--white);flex-shrink:0}
+.pp-name{font-size:12px;color:rgba(255,255,255,.7);flex:1;font-weight:500}
+.pp-bar-wrap{width:80px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.pp-bar{height:100%;border-radius:2px}
+.pp-score{font-family:var(--display);font-size:12px;font-weight:700;width:24px;text-align:right}
+.pp-grade{width:22px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:10px;font-weight:700;flex-shrink:0}
+.g-a{background:rgba(29,158,117,.2);color:#4ECBA3}
+.g-b{background:rgba(45,125,210,.2);color:#6BAEE0}
+.g-c{background:rgba(250,199,117,.15);color:var(--amber)}
+.g-d{background:rgba(194,65,12,.2);color:#F0997B}
+.g-f{background:rgba(226,75,74,.2);color:#EF7E7D}
+
+/* ── Alert pill ── */
+.alert-pill{display:flex;align-items:center;gap:10px;background:rgba(226,75,74,.08);border:1px solid rgba(226,75,74,.2);border-left:3px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:8px}
+.alert-dot{width:6px;height:6px;background:var(--red);border-radius:50%;flex-shrink:0;animation:pulse 1.5s infinite}
+.alert-text{font-size:12px;color:rgba(255,255,255,.6);line-height:1.4}
+.alert-text strong{color:rgba(255,255,255,.85);font-weight:600}
+
+/* ── Social proof ── */
+.lp-social{display:flex;gap:24px;flex-wrap:wrap}
+.social-item{display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,.3)}
+.social-icon{font-size:14px}
+
+/* ── Right panel ── */
+.right-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:48px 40px;background:var(--bg);overflow-y:auto}
+.form-wrap{width:100%;max-width:400px}
+.form-eyebrow{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
+.form-title{font-family:var(--display);font-size:26px;font-weight:700;color:var(--navy);letter-spacing:-.02em;margin-bottom:6px}
+.form-sub{font-size:14px;color:var(--slate-lt);margin-bottom:32px;line-height:1.5}
+.form-sub a{color:var(--orange);font-weight:500}
+
+/* ── Form elements ── */
+.field{margin-bottom:18px}
+.field-label{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:500;color:var(--navy);margin-bottom:7px}
+.field-hint{font-size:12px;color:var(--slate-lt);font-weight:400}
+.field-input{width:100%;font-family:var(--body);font-size:14px;color:var(--navy);background:var(--white);border:1.5px solid var(--border);border-radius:9px;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s}
+.field-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,106,39,.1)}
+.field-input::placeholder{color:var(--slate-lt)}
+.field-input.error{border-color:var(--red)}
+
+.pw-wrap{position:relative}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate-lt);padding:4px;transition:color .15s}
+.pw-toggle:hover{color:var(--navy)}
+
+.remember-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.remember-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate);cursor:pointer}
+.remember-label input{width:15px;height:15px;accent-color:var(--orange);cursor:pointer}
+.forgot-link{font-size:13px;color:var(--orange);font-weight:500}
+.forgot-link:hover{text-decoration:underline}
+
+.btn-submit{width:100%;font-family:var(--display);font-size:15px;font-weight:700;background:var(--navy);color:var(--white);border:none;border-radius:9px;padding:14px;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.01em}
+.btn-submit:hover{background:var(--navy-mid);transform:translateY(-1px);box-shadow:0 6px 20px rgba(13,27,62,.25)}
+.btn-submit:active{transform:translateY(0)}
+.btn-submit.loading{opacity:.7;pointer-events:none}
+.btn-submit svg{display:none}
+.btn-submit.loading svg{display:block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-msg{background:var(--red-lt);border:1px solid rgba(226,75,74,.2);border-radius:8px;padding:11px 14px;font-size:13px;color:#991B1B;margin-bottom:18px;display:none}
+.error-msg.show{display:block}
+
+.form-divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--slate-lt);font-size:12px}
+.form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Demo credentials ── */
+.demo-creds{background:var(--blue-lt);border:1px solid rgba(45,125,210,.15);border-radius:9px;padding:14px 16px;margin-top:20px}
+.demo-creds-title{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
+.demo-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:3px 0}
+.demo-key{color:var(--slate-lt)}
+.demo-val{font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--navy);font-weight:600}
+.demo-fill{display:inline-flex;align-items:center;gap:4px;font-family:var(--display);font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;border:none;background:none;padding:2px 6px;border-radius:4px;transition:background .15s}
+.demo-fill:hover{background:rgba(45,125,210,.1)}
+
+/* ── Signup link ── */
+.signup-nudge{text-align:center;margin-top:28px;font-size:13px;color:var(--slate-lt)}
+.signup-nudge a{color:var(--orange);font-weight:600}
+.back-link{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--slate-lt);margin-bottom:32px;transition:color .15s}
+.back-link:hover{color:var(--navy)}
+
+@media(max-width:768px){
+  .left-panel{display:none}
+  .right-panel{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LEFT PANEL ── -->
+<div class="left-panel">
+  <div class="lp-grid"></div>
+  <div class="lp-content">
+    <div class="lp-logo">
+      <div class="logo-mark">AI</div>
+      <span class="logo-name">AI Security Scorecard</span>
+    </div>
+
+    <h1 class="lp-headline">Your AI portfolio,<br><em>under continuous watch.</em></h1>
+    <p class="lp-sub">Real-time risk scores for every AI tool your organization uses. Know the moment something changes — before your board asks.</p>
+
+    <!-- Live portfolio preview -->
+    <div class="portfolio-preview">
+      <div class="pp-header">
+        <div class="pp-title">Your portfolio · 12 vendors</div>
+        <div class="pp-badge"><div class="live-dot"></div>Live</div>
+      </div>
+      <div class="pp-rows">
+        <div class="pp-row">
+          <div class="pp-logo" style="background:#2D5A9A">AC</div>
+          <div class="pp-name">Anthropic Claude</div>
+          <div class="pp-bar-wrap"><div class="pp-bar" style="width:91%;background:#1D9E75"></div></div>
+          <div class="pp-score" style="color:#1D9E75">91</div>
+          <div class="pp-grade g-a">A</div>
+        </div>
+        <div class="pp-row">
+          <div class="pp-logo" style="background:#1A6D36">GC</div>
+          <div class="pp-name">GitHub Copilot</div>
+          <div class="pp-bar-wrap"><div class="pp-bar" style="width:85%;background:#2D7DD2"></div></div>
+          <div class="pp-score" style="color:#2D7DD2">85</div>
+          <div class="pp-grade g-b">B</div>
+        </div>
+        <div class="pp-row">
+          <div class="pp-logo" style="background:#833AB4">NA</div>
+          <div class="pp-name">Notion AI</div>
+          <div class="pp-bar-wrap"><div class="pp-bar" style="width:69%;background:var(--amber)"></div></div>
+          <div class="pp-score" style="color:var(--amber)">69</div>
+          <div class="pp-grade g-c">C</div>
+        </div>
+        <div class="pp-row">
+          <div class="pp-logo" style="background:#4A1942">LC</div>
+          <div class="pp-name">LangChain Cloud</div>
+          <div class="pp-bar-wrap"><div class="pp-bar" style="width:49%;background:var(--red)"></div></div>
+          <div class="pp-score" style="color:var(--red)">49</div>
+          <div class="pp-grade g-f">F</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active alert -->
+    <div class="alert-pill">
+      <div class="alert-dot"></div>
+      <div class="alert-text"><strong>LangChain Cloud</strong> — SOC 2 Type II lapsed. Score dropped 8 pts to F. Action required.</div>
+    </div>
+
+    <div class="lp-social">
+      <div class="social-item"><span class="social-icon">🔒</span>SOC 2 Type II</div>
+      <div class="social-item"><span class="social-icon">🔐</span>SSO supported</div>
+      <div class="social-item"><span class="social-icon">🇪🇺</span>GDPR compliant</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RIGHT PANEL ── -->
+<div class="right-panel">
+  <div class="form-wrap">
+    <a href="index.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8.5 2.5L4 7l4.5 4.5"/></svg>
+      Back to home
+    </a>
+
+    <div class="form-eyebrow">Secure sign in</div>
+    <h2 class="form-title">Welcome back</h2>
+    <p class="form-sub">Don't have an account? <a href="waitlist.html">Join the waitlist →</a></p>
+
+    <div class="error-msg" id="errorMsg">Incorrect email or password. Try the demo credentials below.</div>
+
+    <div class="field">
+      <label class="field-label" for="email">Work email</label>
+      <input class="field-input" type="email" id="email" placeholder="you@company.com" autocomplete="email">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="password">
+        Password
+        <span class="field-hint"><a href="#" class="forgot-link" onclick="return false">Forgot password?</a></span>
+      </label>
+      <div class="pw-wrap">
+        <input class="field-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        <button class="pw-toggle" id="pwToggle" type="button" aria-label="Toggle password visibility">
+          <svg id="eyeOpen" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+          <svg id="eyeClosed" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:none"><path d="M2 2l12 12M6.5 6.6A2 2 0 0010.4 9.5M4.2 4.3C2.8 5.3 1.7 6.7 1 8c1.3 2.6 4 5 7 5a7 7 0 002.8-.6M7 3.1A7 7 0 0115 8c-.4.9-1 1.8-1.7 2.5"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="remember-row">
+      <label class="remember-label">
+        <input type="checkbox" id="remember" checked>
+        Keep me signed in
+      </label>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" type="button">
+      <span id="btnText">Sign in to dashboard</span>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="6"/><path d="M7 4v3l2 2" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="demo-creds">
+      <div class="demo-creds-title">Demo account</div>
+      <div class="demo-row">
+        <span class="demo-key">Email</span>
+        <span class="demo-val">demo@enterprise.com</span>
+      </div>
+      <div class="demo-row">
+        <span class="demo-key">Password</span>
+        <span class="demo-val">AIsec2026</span>
+      </div>
+      <div style="margin-top:10px">
+        <button class="demo-fill" id="fillDemo">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 6h8M6 2l4 4-4 4"/></svg>
+          Fill demo credentials
+        </button>
+      </div>
+    </div>
+
+    <div class="signup-nudge">
+      New to AI Security Scorecard? <a href="waitlist.html">Request access</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth config ──────────────────────────────────────────────────────
+const VALID_CREDENTIALS = [
+  {email:'demo@enterprise.com', password:'AIsec2026', name:'Alex Rivera', company:'Meridian Corp', role:'CISO'},
+  {email:'admin@company.com',   password:'admin123',  name:'Sam Chen',    company:'Acme Inc',    role:'Security Lead'},
+];
+
+// Redirect if already logged in
+try {
+  const session = JSON.parse(localStorage.getItem('aisc_session'));
+  if (session && session.email) window.location.href = 'dashboard.html';
+} catch(e){}
+
+// ── Password toggle ──────────────────────────────────────────────────
+const pwInput = document.getElementById('password');
+const pwToggle = document.getElementById('pwToggle');
+const eyeOpen = document.getElementById('eyeOpen');
+const eyeClosed = document.getElementById('eyeClosed');
+
+pwToggle.addEventListener('click', () => {
+  const visible = pwInput.type === 'text';
+  pwInput.type = visible ? 'password' : 'text';
+  eyeOpen.style.display = visible ? 'block' : 'none';
+  eyeClosed.style.display = visible ? 'none' : 'block';
+});
+
+// ── Fill demo ────────────────────────────────────────────────────────
+document.getElementById('fillDemo').addEventListener('click', () => {
+  document.getElementById('email').value = 'demo@enterprise.com';
+  document.getElementById('password').value = 'AIsec2026';
+  document.getElementById('email').dispatchEvent(new Event('input'));
+});
+
+// ── Sign in ──────────────────────────────────────────────────────────
+function signIn() {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const password = document.getElementById('password').value;
+  const remember = document.getElementById('remember').checked;
+  const errorMsg = document.getElementById('errorMsg');
+  const btn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+
+  // Clear errors
+  errorMsg.classList.remove('show');
+  document.getElementById('email').classList.remove('error');
+  document.getElementById('password').classList.remove('error');
+
+  // Validate
+  if (!email || !password) {
+    if (!email) document.getElementById('email').classList.add('error');
+    if (!password) document.getElementById('password').classList.add('error');
+    return;
+  }
+
+  // Loading state
+  btn.classList.add('loading');
+  btnText.textContent = 'Signing in…';
+
+  setTimeout(() => {
+    const user = VALID_CREDENTIALS.find(u => u.email === email && u.password === password);
+
+    if (user) {
+      const session = {
+        email: user.email,
+        name: user.name,
+        company: user.company,
+        role: user.role,
+        loginTime: Date.now(),
+        remember,
+      };
+      try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e){}
+      window.location.href = 'dashboard.html';
+    } else {
+      btn.classList.remove('loading');
+      btnText.textContent = 'Sign in to dashboard';
+      errorMsg.classList.add('show');
+      document.getElementById('password').classList.add('error');
+      document.getElementById('password').value = '';
+    }
+  }, 900);
+}
+
+document.getElementById('submitBtn').addEventListener('click', signIn);
+document.addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+</script>
+</body>
+</html>

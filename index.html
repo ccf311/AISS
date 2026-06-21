@@ -262,9 +262,13 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
       <a href="#pricing">Pricing</a>
       <a href="#vendors">Vendors</a>
     </div>
-    <a href="#pricing" class="btn btn-primary nav-cta" style="font-size:13px;padding:10px 20px">Get early access</a>
+    <a href="login.html" class="btn btn-ghost" id="navAuthBtn" style="font-size:13px;padding:10px 20px">Sign in</a>
+    <a href="waitlist.html" class="btn btn-primary nav-cta" style="font-size:13px;padding:10px 20px">Get early access</a>
   </div>
 </nav>
+<script>
+(function(){try{var s=JSON.parse(localStorage.getItem('aisc_session'));if(s&&s.email){var b=document.getElementById('navAuthBtn');b.textContent='Dashboard';b.href='dashboard.html';b.style.background='rgba(255,255,255,.1)';}}catch(e){}}());
+</script>
 
 <!-- ── HERO ── -->
 <section class="hero">
@@ -693,7 +697,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
         <a href="#pricing" class="btn btn-primary" style="font-size:16px;padding:16px 32px">Start for free →</a>
         <a href="mailto:hello@aisecurityscorecard.com" class="btn btn-ghost" style="font-size:16px;padding:16px 32px">Talk to us</a>
       </div>
-      <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">No credit card required · Cancel anytime</p>
+      <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">No credit card required · Cancel anytime · SOC 2 Type II certified</p>
     </div>
   </div>
 </section>
@@ -707,7 +711,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
           <div class="nav-logo-mark">AI</div>
           <span style="color:rgba(255,255,255,.6);font-size:14px">AI Security Scorecard</span>
         </div>
-        <div class="footer-legal">© 2026 Chain Cyber LLC. All rights reserved.</div>
+        <div class="footer-legal">© 2026 LMT Technology Solutions. All rights reserved.</div>
       </div>
       <div class="footer-links">
         <a href="#">Methodology</a>

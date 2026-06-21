@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard — AI Security Scorecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660; --navy-hover:#152248;
+  --orange:#E86A27; --orange-lt:#FDF0E8; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --blue:#2D7DD2; --blue-lt:#EBF4FF;
+  --purple:#7C3AED; --purple-lt:#F3F0FF;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F3F4F6; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
+  --sidebar:240px;
+  --header:60px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--body);color:var(--slate);-webkit-font-smoothing:antialiased;background:var(--bg)}
+
+/* ── Shell layout ── */
+.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:var(--header) 1fr;height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{grid-row:1/3;grid-column:1;background:var(--navy);display:flex;flex-direction:column;overflow:hidden}
+.sb-logo{height:var(--header);display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-logo-mark{width:30px;height:30px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--white);flex-shrink:0}
+.sb-logo-name{font-family:var(--display);font-size:13px;font-weight:700;color:var(--white);line-height:1.2}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.3);font-weight:400}
+.sb-nav{flex:1;padding:16px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.sb-section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:10px 10px 6px;margin-top:6px}
+.sb-section-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;position:relative;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(255,255,255,.1);color:var(--white)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--orange);border-radius:0 2px 2px 0}
+.nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;font-family:var(--display);font-size:10px;font-weight:700;background:var(--red);color:var(--white);padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+.nav-badge.amber{background:var(--amber);color:#78350F}
+.sb-footer{padding:14px 10px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .15s}
+.sb-user:hover{background:rgba(255,255,255,.06)}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;font-weight:700;color:var(--white);flex-shrink:0}
+.user-name{font-family:var(--display);font-size:13px;font-weight:600;color:var(--white)}
+.user-role{font-size:11px;color:rgba(255,255,255,.35)}
+
+/* ── Header ── */
+.topbar{grid-column:2;grid-row:1;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;z-index:10}
+.topbar-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy)}
+.topbar-sub{font-size:12px;color:var(--slate-lt);margin-left:2px}
+.topbar-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.topbar-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;transition:border-color .15s}
+.topbar-search:focus-within{border-color:var(--orange)}
+.topbar-search input{font-family:var(--body);font-size:13px;color:var(--navy);background:transparent;border:none;outline:none;width:180px}
+.topbar-search input::placeholder{color:var(--slate-lt)}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--slate-lt);transition:all .15s;position:relative}
+.icon-btn:hover{border-color:var(--navy);color:var(--navy)}
+.notif-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid var(--white);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:9px;font-weight:700;color:var(--white)}
+.add-vendor-btn{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:13px;font-weight:600;background:var(--orange);color:var(--white);border:none;border-radius:8px;padding:8px 16px;cursor:pointer;transition:all .15s}
+.add-vendor-btn:hover{background:var(--orange-dim);transform:translateY(-1px)}
+
+/* ── Main content ── */
+.main{grid-column:2;grid-row:2;overflow-y:auto;padding:24px 28px 40px}
+
+/* ── Stat row ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-label{font-size:12px;font-weight:500;color:var(--slate-lt);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.stat-value{font-family:var(--display);font-size:28px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:6px}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-value.amber{color:#B45309}
+.stat-delta{font-size:12px;display:flex;align-items:center;gap:4px}
+.delta-up{color:var(--green)}
+.delta-down{color:var(--red)}
+.delta-neu{color:var(--slate-lt)}
+
+/* ── Grid ── */
+.content-grid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+
+/* ── Alerts panel ── */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.panel-title{font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.panel-badge{font-family:var(--display);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.panel-badge.red{background:var(--red-lt);color:var(--red)}
+.panel-badge.amber{background:var(--amber-lt);color:#92400E}
+.panel-action{font-family:var(--display);font-size:12px;font-weight:600;color:var(--orange);cursor:pointer;transition:opacity .15s}
+.panel-action:hover{opacity:.7}
+
+/* ── Alert items ── */
+.alert-item{display:flex;align-items:flex-start;gap:0;padding:0;border-bottom:1px solid var(--border);transition:background .15s;cursor:pointer;position:relative}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:var(--bg)}
+.alert-severity{width:4px;flex-shrink:0;align-self:stretch}
+.alert-severity.critical{background:var(--red)}
+.alert-severity.warning{background:var(--amber)}
+.alert-severity.info{background:var(--blue)}
+@keyframes severityPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.alert-item.unread .alert-severity{animation:severityPulse 2s infinite}
+.alert-body{flex:1;padding:14px 16px}
+.alert-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px}
+.alert-vendor-row{display:flex;align-items:center;gap:8px}
+.alert-logo{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:9px;font-weight:700;color:var(--white);flex-shrink:0}
+.alert-vendor-name{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.alert-unread-dot{width:7px;height:7px;background:var(--red);border-radius:50%;flex-shrink:0;margin-top:3px}
+.alert-time{font-size:11px;color:var(--slate-lt);white-space:nowrap;flex-shrink:0}
+.alert-title{font-size:13px;color:var(--slate);line-height:1.5;margin-bottom:8px}
+.alert-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.alert-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:var(--display)}
+.chip-red{background:var(--red-lt);color:var(--red)}
+.chip-amber{background:var(--amber-lt);color:#92400E}
+.chip-blue{background:var(--blue-lt);color:var(--blue)}
+.chip-green{background:var(--green-lt);color:var(--green)}
+.alert-action-row{display:flex;gap:8px;margin-top:10px}
+.alert-btn{font-family:var(--display);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;border:none;transition:all .15s}
+.alert-btn-primary{background:var(--navy);color:var(--white)}
+.alert-btn-primary:hover{background:var(--navy-mid)}
+.alert-btn-ghost{background:var(--bg);color:var(--slate);border:1px solid var(--border)}
+.alert-btn-ghost:hover{border-color:var(--navy);color:var(--navy)}
+
+/* ── Vendor table ── */
+.vendor-table{width:100%;border-collapse:collapse}
+.vendor-table th{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--slate-lt);padding:0 16px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.vendor-table th:hover{color:var(--navy)}
+.vendor-table th .sort-icon{opacity:.4;margin-left:4px;font-size:9px}
+.vendor-table th.sorted .sort-icon{opacity:1;color:var(--orange)}
+.vendor-table td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.vendor-table tr:last-child td{border-bottom:none}
+.vendor-table tr:hover td{background:rgba(249,250,251,.7)}
+.vt-vendor{display:flex;align-items:center;gap:10px}
+.vt-logo{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:10px;font-weight:700;color:var(--white);flex-shrink:0}
+.vt-name{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.vt-cat{font-size:11px;color:var(--slate-lt);margin-top:1px}
+.vt-grade{display:inline-flex;align-items:center;justify-content:center;width:26px;height:24px;border-radius:6px;font-family:var(--display);font-size:12px;font-weight:700}
+.ga{background:var(--green-lt);color:var(--green)}
+.gb{background:var(--blue-lt);color:var(--blue)}
+.gc{background:var(--amber-lt);color:#B45309}
+.gd{background:#FFF0E8;color:#C2410C}
+.gf{background:var(--red-lt);color:var(--red)}
+.vt-score{font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy)}
+.vt-trend{font-family:var(--display);font-size:12px;font-weight:700;display:flex;align-items:center;gap:3px}
+.trend-up{color:var(--green)}
+.trend-down{color:var(--red)}
+.trend-flat{color:var(--slate-lt)}
+.risk-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.risk-low{background:var(--green-lt);color:var(--green)}
+.risk-med{background:var(--amber-lt);color:#92400E}
+.risk-high{background:var(--red-lt);color:var(--red)}
+.risk-dot{width:5px;height:5px;border-radius:50%}
+.risk-low .risk-dot{background:var(--green)}
+.risk-med .risk-dot{background:var(--amber)}
+.risk-high .risk-dot{background:var(--red)}
+.vt-actions{display:flex;gap:6px;justify-content:flex-end}
+.tbl-btn{font-family:var(--display);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);color:var(--slate);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tbl-btn:hover{border-color:var(--navy);color:var(--navy)}
+.tbl-btn.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Sidebar widgets ── */
+.widget{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.widget-header{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.widget-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.widget-sub{font-size:11px;color:var(--slate-lt);margin-top:2px}
+.widget-body{padding:16px}
+
+/* ── Donut chart ── */
+.donut-wrap{display:flex;flex-direction:column;align-items:center}
+.donut-wrap svg{display:block}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.donut-total{font-family:var(--display);font-size:26px;font-weight:700;color:var(--navy)}
+.donut-label{font-size:11px;color:var(--slate-lt)}
+.donut-legend{display:flex;flex-direction:column;gap:7px;margin-top:14px;width:100%}
+.legend-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.legend-left{display:flex;align-items:center;gap:7px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.legend-name{color:var(--slate)}
+.legend-right{display:flex;align-items:center;gap:6px}
+.legend-count{font-family:var(--display);font-weight:700;color:var(--navy)}
+.legend-pct{color:var(--slate-lt)}
+
+/* ── Score trend chart ── */
+.trend-chart-wrap{padding:4px 0 0}
+.trend-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--slate-lt);padding:6px 0 0;margin-top:2px}
+
+/* ── Activity feed ── */
+.activity-list{display:flex;flex-direction:column}
+.activity-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.activity-body{flex:1}
+.activity-text{font-size:12px;line-height:1.5;color:var(--slate)}
+.activity-text strong{color:var(--navy);font-weight:600}
+.activity-time{font-size:11px;color:var(--slate-lt);margin-top:2px}
+
+/* ── Score change badge ── */
+.score-change{display:inline-flex;align-items:center;gap:3px;font-family:var(--display);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px}
+.sc-up{background:var(--green-lt);color:var(--green)}
+.sc-down{background:var(--red-lt);color:var(--red)}
+
+/* ── Add vendor modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(13,27,62,.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:460px;margin:24px;box-shadow:0 24px 64px rgba(13,27,62,.25);overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;color:var(--slate-lt);cursor:pointer;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.modal-close:hover{background:var(--bg);color:var(--navy)}
+.modal-body{padding:24px}
+.modal-field{margin-bottom:16px}
+.modal-label{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:6px;display:block}
+.modal-input{width:100%;font-family:var(--body);font-size:14px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:var(--orange);background:var(--white)}
+.modal-footer{padding:16px 24px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.btn-modal-cancel{font-family:var(--display);font-size:13px;font-weight:600;background:var(--white);color:var(--slate);border:1.5px solid var(--border);border-radius:8px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.btn-modal-cancel:hover{border-color:var(--navy);color:var(--navy)}
+.btn-modal-add{font-family:var(--display);font-size:13px;font-weight:600;background:var(--orange);color:var(--white);border:none;border-radius:8px;padding:10px 20px;cursor:pointer;transition:all .15s}
+.btn-modal-add:hover{background:var(--orange-dim)}
+
+/* ── User dropdown ── */
+.user-dropdown{position:relative}
+.user-dropdown-menu{position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:9px;overflow:hidden;display:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.user-dropdown-menu.open{display:block}
+.dd-item{display:flex;align-items:center;gap:9px;padding:10px 12px;font-size:13px;color:rgba(255,255,255,.65);cursor:pointer;transition:all .15s;text-decoration:none}
+.dd-item:hover{background:rgba(255,255,255,.06);color:var(--white)}
+.dd-item.danger:hover{color:var(--red)}
+.dd-divider{height:1px;background:rgba(255,255,255,.07);margin:4px 0}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);font-family:var(--display);font-size:13px;font-weight:600;padding:12px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(13,27,62,.3);display:flex;align-items:center;gap:10px;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);z-index:2000;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{font-size:16px}
+
+/* ── Scrollbar ── */
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-track{background:transparent}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:1024px){
+  .content-grid{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  :root{--sidebar:0px}
+  .sidebar{display:none}
+  .topbar-search{display:none}
+  .stat-row{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  .alert-severity{animation:none}
+  .toast{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">AI</div>
+      <div>
+        <div class="sb-logo-name">AI Security</div>
+        <div class="sb-logo-sub">Scorecard</div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-label">Monitor</div>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="6" height="6" rx="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5"/></svg>
+        Portfolio
+      </a>
+      <a href="#" class="nav-item" id="navAlerts">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2a5.5 5.5 0 015.5 5.5c0 3 1.5 4.5 1.5 4.5H2s1.5-1.5 1.5-4.5A5.5 5.5 0 019 2z"/><path d="M7 15.5a2 2 0 004 0"/></svg>
+        Alerts
+        <span class="nav-badge" id="alertBadge">3</span>
+      </a>
+      <a href="vendors.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><path d="M9 6v3l2 2"/></svg>
+        Vendor Directory
+      </a>
+
+      <div class="sb-section-label">Analyze</div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 13l4-4 3 3 5-6"/><path d="M2 16h14"/></svg>
+        Reports
+        <span class="nav-badge amber" style="font-size:9px;padding:1px 5px">Soon</span>
+      </a>
+      <a href="methodology.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2v14M2 9h14"/><circle cx="9" cy="9" r="7"/></svg>
+        Methodology
+      </a>
+
+      <div class="sb-section-label">Account</div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6" r="3"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Team
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="3"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M4.2 13.8l1.4-1.4M12.4 5.6l1.4-1.4"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sb-footer">
+      <div class="user-dropdown">
+        <div class="user-dropdown-menu" id="userDropdown">
+          <a href="#" class="dd-item">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="4.5" r="2.5"/><path d="M2 12c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+            Account settings
+          </a>
+          <a href="#" class="dd-item">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="10" height="10" rx="2"/><path d="M5 7h4M7 5v4"/></svg>
+            Invite teammates
+          </a>
+          <div class="dd-divider"></div>
+          <div class="dd-item danger" id="logoutBtn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 2H3a1 1 0 00-1 1v8a1 1 0 001 1h6M10 10l3-3-3-3M13 7H6"/></svg>
+            Sign out
+          </div>
+        </div>
+        <div class="sb-user" id="userBtn">
+          <div class="user-avatar" id="userAvatar">AR</div>
+          <div>
+            <div class="user-name" id="userName">Alex Rivera</div>
+            <div class="user-role" id="userRole">CISO · Meridian Corp</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar">
+    <div>
+      <div class="topbar-title">Portfolio Dashboard</div>
+      <div class="topbar-sub" id="topbarSub">Good morning, Alex</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-search">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5L12 12"/></svg>
+        <input type="text" placeholder="Search vendors…" id="tableSearch">
+      </div>
+      <button class="icon-btn" title="Notifications" id="notifBtn">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7.5 1.5A4.5 4.5 0 0112 6c0 2.5 1.25 3.75 1.25 3.75H1.75S3 8.5 3 6A4.5 4.5 0 017.5 1.5z"/><path d="M6 12a1.5 1.5 0 003 0"/></svg>
+        <div class="notif-badge" id="notifBadge">3</div>
+      </button>
+      <button class="add-vendor-btn" id="addVendorBtn">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 1v11M1 6.5h11"/></svg>
+        Add vendor
+      </button>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- Stat row -->
+    <div class="stat-row">
+      <div class="stat-card green">
+        <div class="stat-label">Vendors monitored</div>
+        <div class="stat-value">12</div>
+        <div class="stat-delta delta-up">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 8V2M2 5l3-3 3 3"/></svg>
+          2 added this month
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5M5 7h0"/></svg>
+          Active alerts
+        </div>
+        <div class="stat-value red">3</div>
+        <div class="stat-delta delta-down">1 critical · 2 warnings</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Portfolio avg score</div>
+        <div class="stat-value amber">72</div>
+        <div class="stat-delta delta-down">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 2v6M2 5l3 3 3-3"/></svg>
+          −2 pts this month
+        </div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Vendors needing action</div>
+        <div class="stat-value" style="color:var(--red)">2</div>
+        <div class="stat-delta delta-neu">1× F grade · 1× D grade</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="content-grid">
+      <div class="left-col">
+
+        <!-- Alert feed -->
+        <div class="panel" id="alertPanel">
+          <div class="panel-header">
+            <div class="panel-title">
+              Active Alerts
+              <span class="panel-badge red">3 unread</span>
+            </div>
+            <span class="panel-action" id="markAllRead">Mark all read</span>
+          </div>
+
+          <!-- Alert 1 -->
+          <div class="alert-item unread" data-id="a1">
+            <div class="alert-severity critical"></div>
+            <div class="alert-body">
+              <div class="alert-top">
+                <div class="alert-vendor-row">
+                  <div class="alert-logo" style="background:#4A1942">LC</div>
+                  <div class="alert-vendor-name">LangChain Cloud</div>
+                  <div class="alert-unread-dot"></div>
+                </div>
+                <div class="alert-time">2 days ago</div>
+              </div>
+              <div class="alert-title">SOC 2 Type II certification has lapsed. Score dropped from <strong>57 → 49</strong>, triggering an automatic grade floor to <strong>F</strong>. This vendor should not remain in active enterprise use without explicit risk acceptance.</div>
+              <div class="alert-meta">
+                <span class="alert-chip chip-red">Critical</span>
+                <span class="alert-chip chip-red">Grade: F</span>
+                <span class="alert-chip chip-red">−8 pts</span>
+                <span class="alert-chip" style="background:var(--bg);color:var(--slate)">Compliance & Certs</span>
+              </div>
+              <div class="alert-action-row">
+                <button class="alert-btn alert-btn-primary" onclick="window.location.href='scorecard-claude.html'">View scorecard</button>
+                <button class="alert-btn alert-btn-ghost" onclick="dismissAlert(this)">Dismiss</button>
+                <button class="alert-btn alert-btn-ghost" onclick="acceptRisk(this)">Accept risk</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert 2 -->
+          <div class="alert-item unread" data-id="a2">
+            <div class="alert-severity warning"></div>
+            <div class="alert-body">
+              <div class="alert-top">
+                <div class="alert-vendor-row">
+                  <div class="alert-logo" style="background:#2D2D2D">CU</div>
+                  <div class="alert-vendor-name">Cursor (AI IDE)</div>
+                  <div class="alert-unread-dot"></div>
+                </div>
+                <div class="alert-time">4 days ago</div>
+              </div>
+              <div class="alert-title">New research documents system prompt extraction via extended role-play sequences. Score adjusted from <strong>64 → 61</strong>. Operators using custom system prompts with confidential instructions should review mitigation options.</div>
+              <div class="alert-meta">
+                <span class="alert-chip chip-amber">Warning</span>
+                <span class="alert-chip chip-amber">Grade: C</span>
+                <span class="alert-chip chip-amber">−3 pts</span>
+                <span class="alert-chip" style="background:var(--bg);color:var(--slate)">Model Security</span>
+              </div>
+              <div class="alert-action-row">
+                <button class="alert-btn alert-btn-primary" onclick="showToast('Opening scorecard…','📋')">View scorecard</button>
+                <button class="alert-btn alert-btn-ghost" onclick="dismissAlert(this)">Dismiss</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert 3 -->
+          <div class="alert-item unread" data-id="a3">
+            <div class="alert-severity warning"></div>
+            <div class="alert-body">
+              <div class="alert-top">
+                <div class="alert-vendor-row">
+                  <div class="alert-logo" style="background:#4285F4">GG</div>
+                  <div class="alert-vendor-name">Google Gemini</div>
+                  <div class="alert-unread-dot"></div>
+                </div>
+                <div class="alert-time">1 week ago</div>
+              </div>
+              <div class="alert-title">Privacy policy updated. Data retention section revised — default retention for Workspace API calls changed from 0 days to 30 days unless explicitly disabled. Review your API configuration.</div>
+              <div class="alert-meta">
+                <span class="alert-chip chip-amber">Warning</span>
+                <span class="alert-chip chip-amber">Grade: B</span>
+                <span class="alert-chip chip-amber">−2 pts</span>
+                <span class="alert-chip" style="background:var(--bg);color:var(--slate)">Data Privacy</span>
+              </div>
+              <div class="alert-action-row">
+                <button class="alert-btn alert-btn-primary" onclick="showToast('Opening scorecard…','📋')">View scorecard</button>
+                <button class="alert-btn alert-btn-ghost" onclick="dismissAlert(this)">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendor table -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Monitored Vendors</div>
+            <span class="panel-action" id="exportBtn">Export CSV</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="vendor-table" id="vendorTable">
+              <thead>
+                <tr>
+                  <th data-col="name">Vendor <span class="sort-icon">↕</span></th>
+                  <th data-col="grade">Grade <span class="sort-icon">↕</span></th>
+                  <th data-col="score" class="sorted">Score <span class="sort-icon">↓</span></th>
+                  <th data-col="trend">30d change <span class="sort-icon">↕</span></th>
+                  <th data-col="risk">Risk <span class="sort-icon">↕</span></th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="vendorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /left-col -->
+
+      <!-- ── RIGHT SIDEBAR WIDGETS ── -->
+      <div class="right-col">
+
+        <!-- Portfolio health donut -->
+        <div class="widget">
+          <div class="widget-header">
+            <div class="widget-title">Portfolio Health</div>
+            <div class="widget-sub">12 vendors by grade</div>
+          </div>
+          <div class="widget-body">
+            <div class="donut-wrap">
+              <div style="position:relative;width:140px;height:140px">
+                <svg width="140" height="140" viewBox="0 0 140 140" id="donutSvg"></svg>
+                <div class="donut-center">
+                  <div class="donut-total">72</div>
+                  <div class="donut-label">avg score</div>
+                </div>
+              </div>
+              <div class="donut-legend">
+                <div class="legend-row">
+                  <div class="legend-left"><div class="legend-swatch" style="background:#1D9E75"></div><span class="legend-name">Grade A</span></div>
+                  <div class="legend-right"><span class="legend-count">1</span><span class="legend-pct">8%</span></div>
+                </div>
+                <div class="legend-row">
+                  <div class="legend-left"><div class="legend-swatch" style="background:#2D7DD2"></div><span class="legend-name">Grade B</span></div>
+                  <div class="legend-right"><span class="legend-count">6</span><span class="legend-pct">50%</span></div>
+                </div>
+                <div class="legend-row">
+                  <div class="legend-left"><div class="legend-swatch" style="background:#D97706"></div><span class="legend-name">Grade C</span></div>
+                  <div class="legend-right"><span class="legend-count">2</span><span class="legend-pct">17%</span></div>
+                </div>
+                <div class="legend-row">
+                  <div class="legend-left"><div class="legend-swatch" style="background:#C2410C"></div><span class="legend-name">Grade D</span></div>
+                  <div class="legend-right"><span class="legend-count">1</span><span class="legend-pct">8%</span></div>
+                </div>
+                <div class="legend-row">
+                  <div class="legend-left"><div class="legend-swatch" style="background:#E24B4A"></div><span class="legend-name">Grade F</span></div>
+                  <div class="legend-right"><span class="legend-count">2</span><span class="legend-pct">17%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio score trend -->
+        <div class="widget">
+          <div class="widget-header">
+            <div class="widget-title">Score Trend</div>
+            <div class="widget-sub">Portfolio avg · 6 months</div>
+          </div>
+          <div class="widget-body" style="padding-bottom:12px">
+            <svg id="trendSvg" width="100%" height="80" viewBox="0 0 268 80" preserveAspectRatio="none"></svg>
+            <div class="trend-labels">
+              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="widget">
+          <div class="widget-header">
+            <div class="widget-title">Recent Activity</div>
+          </div>
+          <div class="widget-body" style="padding:0 16px">
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon" style="background:var(--green-lt)">✓</div>
+                <div class="activity-body">
+                  <div class="activity-text"><strong>Anthropic Claude</strong> SOC 2 renewed <span class="score-change sc-up">+1 ▲</span></div>
+                  <div class="activity-time">2 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:var(--red-lt)">!</div>
+                <div class="activity-body">
+                  <div class="activity-text"><strong>LangChain Cloud</strong> SOC 2 lapsed <span class="score-change sc-down">−8 ▼</span></div>
+                  <div class="activity-time">2 days ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:var(--red-lt)">!</div>
+                <div class="activity-body">
+                  <div class="activity-text"><strong>Cursor IDE</strong> prompt extraction finding <span class="score-change sc-down">−3 ▼</span></div>
+                  <div class="activity-time">4 days ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:var(--amber-lt)">~</div>
+                <div class="activity-body">
+                  <div class="activity-text"><strong>Google Gemini</strong> privacy policy changed <span class="score-change sc-down">−2 ▼</span></div>
+                  <div class="activity-time">1 week ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:var(--blue-lt)">+</div>
+                <div class="activity-body">
+                  <div class="activity-text">You added <strong>Adobe Firefly</strong> to portfolio</div>
+                  <div class="activity-time">2 weeks ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /right-col -->
+    </div><!-- /content-grid -->
+  </main>
+</div>
+
+<!-- ── ADD VENDOR MODAL ── -->
+<div class="modal-overlay" id="addVendorModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add vendor to portfolio</div>
+      <button class="modal-close" id="closeModal">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Search vendor name</label>
+        <input class="modal-input" type="text" placeholder="e.g. Mistral Large, DataRobot…" id="vendorSearchInput">
+      </div>
+      <div style="font-size:12px;color:var(--slate-lt);margin-top:-8px">We'll find the scorecard and add it to your monitored portfolio. You'll get alerts when the score changes.</div>
+      <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--slate-lt)">
+        💡 <strong style="color:var(--navy)">247 vendors</strong> available in our directory. <a href="vendors.html" style="color:var(--orange);font-weight:600">Browse all →</a>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" id="cancelModal">Cancel</button>
+      <button class="btn-modal-add" id="confirmAdd">Add vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✓</span>
+  <span id="toastText">Done</span>
+</div>
+
+<script>
+// ── Auth guard ───────────────────────────────────────────────────────
+let session = null;
+try { session = JSON.parse(localStorage.getItem('aisc_session')); } catch(e){}
+if (!session || !session.email) {
+  window.location.href = 'login.html';
+}
+
+// ── Personalize ──────────────────────────────────────────────────────
+if (session) {
+  const firstName = session.name.split(' ')[0];
+  const initials = session.name.split(' ').map(n => n[0]).join('').toUpperCase();
+  document.getElementById('userName').textContent = session.name;
+  document.getElementById('userRole').textContent = `${session.role} · ${session.company}`;
+  document.getElementById('userAvatar').textContent = initials;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('topbarSub').textContent = `${greeting}, ${firstName}`;
+}
+
+// ── Vendor data ──────────────────────────────────────────────────────
+const portfolio = [
+  {initials:'AC', color:'#2D5A9A', name:'Anthropic Claude',    cat:'LLM / Chatbot',    score:91, grade:'A', risk:'low',  trend:+1, updated:'2h ago',  scorecard:'scorecard-claude.html'},
+  {initials:'OA', color:'#10A37F', name:'OpenAI GPT-4o',       cat:'LLM / Chatbot',    score:87, grade:'B', risk:'low',  trend: 0, updated:'4h ago',  scorecard:null},
+  {initials:'AF', color:'#FF0000', name:'Adobe Firefly',        cat:'Image Generation', score:88, grade:'B', risk:'low',  trend: 0, updated:'1d ago',  scorecard:null},
+  {initials:'GC', color:'#1A6D36', name:'GitHub Copilot',       cat:'Code Assistant',   score:85, grade:'B', risk:'low',  trend: 0, updated:'3h ago',  scorecard:null},
+  {initials:'GG', color:'#4285F4', name:'Google Gemini',        cat:'LLM / Chatbot',    score:82, grade:'B', risk:'medium',trend:-2,updated:'7d ago',  scorecard:null},
+  {initials:'SE', color:'#00A1E0', name:'Salesforce Einstein',  cat:'Agent / Workflow',  score:77, grade:'B', risk:'medium',trend: 0,updated:'2d ago',  scorecard:null},
+  {initials:'GB', color:'#15C39A', name:'Grammarly Business',   cat:'Writing & Content', score:76, grade:'B', risk:'medium',trend: 0,updated:'2d ago',  scorecard:null},
+  {initials:'NA', color:'#833AB4', name:'Notion AI',            cat:'Writing & Content', score:69, grade:'C', risk:'medium',trend: 0,updated:'3h ago',  scorecard:null},
+  {initials:'CU', color:'#2D2D2D', name:'Cursor (AI IDE)',      cat:'Code Assistant',    score:61, grade:'C', risk:'medium',trend:-3,updated:'4d ago',  scorecard:null},
+  {initials:'JA', color:'#FF6B35', name:'Jasper AI',            cat:'Writing & Content', score:52, grade:'D', risk:'high', trend: 0, updated:'3d ago',  scorecard:null},
+  {initials:'SA', color:'#6B46C1', name:'Stability AI',         cat:'Image Generation',  score:41, grade:'F', risk:'high', trend: 0, updated:'1d ago',  scorecard:null},
+  {initials:'LC', color:'#4A1942', name:'LangChain Cloud',      cat:'Agent / Workflow',  score:49, grade:'F', risk:'high', trend:-8, updated:'2d ago',  scorecard:null},
+];
+
+const gradeClass  = {A:'ga',B:'gb',C:'gc',D:'gd',F:'gf'};
+const gradeColor  = {A:'#1D9E75',B:'#2D7DD2',C:'#D97706',D:'#C2410C',F:'#E24B4A'};
+const riskClass   = {low:'risk-low',medium:'risk-med',high:'risk-high'};
+const riskLabel   = {low:'Low',medium:'Medium',high:'High'};
+
+let sortCol = 'score', sortDir = -1;
+
+function trendHTML(t) {
+  if (t > 0) return `<span class="vt-trend trend-up">▲ +${t}</span>`;
+  if (t < 0) return `<span class="vt-trend trend-down">▼ ${t}</span>`;
+  return `<span class="vt-trend trend-flat">—</span>`;
+}
+
+function renderTable(filter = '') {
+  const q = filter.toLowerCase();
+  let data = portfolio.filter(v => v.name.toLowerCase().includes(q) || v.cat.toLowerCase().includes(q));
+  data.sort((a, b) => {
+    const va = sortCol === 'name' ? a.name : sortCol === 'grade' ? a.grade : sortCol === 'trend' ? a.trend : sortCol === 'risk' ? ['low','medium','high'].indexOf(a.risk) : a.score;
+    const vb = sortCol === 'name' ? b.name : sortCol === 'grade' ? b.grade : sortCol === 'trend' ? b.trend : sortCol === 'risk' ? ['low','medium','high'].indexOf(b.risk) : b.score;
+    if (va < vb) return sortDir;
+    if (va > vb) return -sortDir;
+    return 0;
+  });
+  const tbody = document.getElementById('vendorTableBody');
+  tbody.innerHTML = data.map(v => `
+    <tr>
+      <td>
+        <div class="vt-vendor">
+          <div class="vt-logo" style="background:${v.color}">${v.initials}</div>
+          <div>
+            <div class="vt-name">${v.name}</div>
+            <div class="vt-cat">${v.cat}</div>
+          </div>
+        </div>
+      </td>
+      <td><div class="vt-grade ${gradeClass[v.grade]}">${v.grade}</div></td>
+      <td><span class="vt-score" style="color:${gradeColor[v.grade]}">${v.score}</span></td>
+      <td>${trendHTML(v.trend)}</td>
+      <td><div class="risk-pill ${riskClass[v.risk]}"><div class="risk-dot"></div>${riskLabel[v.risk]}</div></td>
+      <td style="font-size:12px;color:var(--slate-lt)">${v.updated}</td>
+      <td>
+        <div class="vt-actions">
+          <button class="tbl-btn" onclick="${v.scorecard ? `window.location.href='${v.scorecard}'` : `showToast('Scorecard coming soon','⏳')`}">Scorecard</button>
+          <button class="tbl-btn danger" onclick="removeVendor('${v.name}', this)">Remove</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Table sorting
+document.querySelectorAll('.vendor-table th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = -1; }
+    document.querySelectorAll('.vendor-table th').forEach(t => t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.sort-icon').textContent = sortDir === -1 ? '↓' : '↑';
+    renderTable(document.getElementById('tableSearch').value);
+  });
+});
+
+document.getElementById('tableSearch').addEventListener('input', e => renderTable(e.target.value));
+
+function removeVendor(name, btn) {
+  const row = btn.closest('tr');
+  row.style.transition = 'opacity .3s, transform .3s';
+  row.style.opacity = '0';
+  row.style.transform = 'translateX(16px)';
+  setTimeout(() => row.remove(), 300);
+  showToast(`${name} removed from portfolio`, '🗑️');
+}
+
+// ── Donut chart ──────────────────────────────────────────────────────
+(function() {
+  const segments = [
+    {pct:1/12,  color:'#1D9E75'},
+    {pct:6/12,  color:'#2D7DD2'},
+    {pct:2/12,  color:'#D97706'},
+    {pct:1/12,  color:'#C2410C'},
+    {pct:2/12,  color:'#E24B4A'},
+  ];
+  const svg = document.getElementById('donutSvg');
+  const cx = 70, cy = 70, r = 52, strokeW = 18;
+  const circ = 2 * Math.PI * r;
+  const gap = 3;
+  let offset = -circ * 0.25;
+
+  segments.forEach(seg => {
+    const len = seg.pct * circ - gap;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r); circle.setAttribute('fill','none');
+    circle.setAttribute('stroke', seg.color);
+    circle.setAttribute('stroke-width', strokeW);
+    circle.setAttribute('stroke-dasharray', `${len} ${circ - len}`);
+    circle.setAttribute('stroke-dashoffset', -offset);
+    circle.setAttribute('stroke-linecap','butt');
+    svg.appendChild(circle);
+    offset += seg.pct * circ;
+  });
+
+  // Background circle
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',r);
+  bg.setAttribute('fill','none'); bg.setAttribute('stroke','var(--border)');
+  bg.setAttribute('stroke-width',strokeW);
+  svg.insertBefore(bg, svg.firstChild);
+})();
+
+// ── Trend line chart ─────────────────────────────────────────────────
+(function() {
+  const svg = document.getElementById('trendSvg');
+  const scores = [74, 74, 73, 74, 73, 72];
+  const W = 268, H = 80, pad = 8;
+  const minS = 65, maxS = 80;
+  const pts = scores.map((s, i) => {
+    const x = pad + (i / (scores.length - 1)) * (W - pad * 2);
+    const y = H - pad - ((s - minS) / (maxS - minS)) * (H - pad * 2);
+    return [x, y];
+  });
+  const pathD = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML = `<linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#E86A27" stop-opacity="0.15"/>
+    <stop offset="100%" stop-color="#E86A27" stop-opacity="0"/>
+  </linearGradient>`;
+  svg.appendChild(defs);
+
+  const area = document.createElementNS('http://www.w3.org/2000/svg','path');
+  area.setAttribute('d', areaD); area.setAttribute('fill','url(#tg)');
+  svg.appendChild(area);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+  line.setAttribute('d', pathD); line.setAttribute('fill','none');
+  line.setAttribute('stroke','#E86A27'); line.setAttribute('stroke-width','2');
+  line.setAttribute('stroke-linecap','round'); line.setAttribute('stroke-linejoin','round');
+  svg.appendChild(line);
+
+  // Endpoint dot
+  const [lx, ly] = pts[pts.length - 1];
+  const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('cx', lx); dot.setAttribute('cy', ly);
+  dot.setAttribute('r', '4'); dot.setAttribute('fill','#E86A27');
+  dot.setAttribute('stroke','#fff'); dot.setAttribute('stroke-width','2');
+  svg.appendChild(dot);
+})();
+
+// ── Alerts ───────────────────────────────────────────────────────────
+function dismissAlert(btn) {
+  const item = btn.closest('.alert-item');
+  item.style.transition = 'all .3s';
+  item.style.opacity = '0';
+  item.style.maxHeight = item.offsetHeight + 'px';
+  setTimeout(() => { item.style.maxHeight = '0'; item.style.padding = '0'; item.style.borderWidth = '0'; }, 50);
+  setTimeout(() => item.remove(), 350);
+  showToast('Alert dismissed', '✓');
+  updateAlertBadge(-1);
+}
+
+function acceptRisk(btn) {
+  const item = btn.closest('.alert-item');
+  item.querySelector('.alert-severity').style.background = 'var(--green)';
+  item.querySelector('.alert-unread-dot')?.remove();
+  item.classList.remove('unread');
+  showToast('Risk accepted and logged', '📋');
+  updateAlertBadge(-1);
+}
+
+let alertCount = 3;
+function updateAlertBadge(delta) {
+  alertCount = Math.max(0, alertCount + delta);
+  document.getElementById('alertBadge').textContent = alertCount;
+  document.getElementById('notifBadge').textContent = alertCount;
+  if (alertCount === 0) {
+    document.getElementById('alertBadge').style.display = 'none';
+    document.getElementById('notifBadge').style.display = 'none';
+  }
+  const badge = document.querySelector('.panel-badge.red');
+  if (badge) badge.textContent = alertCount + ' unread';
+}
+
+document.getElementById('markAllRead').addEventListener('click', () => {
+  document.querySelectorAll('.alert-item.unread').forEach(item => {
+    item.classList.remove('unread');
+    item.querySelector('.alert-severity')?.style && (item.querySelector('.alert-severity').animation = 'none');
+    item.querySelector('.alert-unread-dot')?.remove();
+  });
+  alertCount = 0;
+  document.getElementById('alertBadge').style.display = 'none';
+  document.getElementById('notifBadge').style.display = 'none';
+  const badge = document.querySelector('.panel-badge.red');
+  if (badge) { badge.textContent = '0 unread'; badge.style.background = 'var(--green-lt)'; badge.style.color = 'var(--green)'; }
+  showToast('All alerts marked as read', '✓');
+});
+
+// ── Modal ────────────────────────────────────────────────────────────
+const modal = document.getElementById('addVendorModal');
+document.getElementById('addVendorBtn').addEventListener('click', () => modal.classList.add('open'));
+document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
+document.getElementById('cancelModal').addEventListener('click', () => modal.classList.remove('open'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+document.getElementById('confirmAdd').addEventListener('click', () => {
+  const val = document.getElementById('vendorSearchInput').value.trim();
+  if (!val) return;
+  modal.classList.remove('open');
+  showToast(`${val} added to portfolio`, '✓');
+  document.getElementById('vendorSearchInput').value = '';
+});
+
+// ── User dropdown ────────────────────────────────────────────────────
+const userBtn = document.getElementById('userBtn');
+const dropdown = document.getElementById('userDropdown');
+userBtn.addEventListener('click', () => dropdown.classList.toggle('open'));
+document.addEventListener('click', e => { if (!userBtn.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('open'); });
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  try { localStorage.removeItem('aisc_session'); } catch(e){}
+  window.location.href = 'login.html';
+});
+
+// ── Export ───────────────────────────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = [['Vendor','Category','Score','Grade','Risk','30d Change','Last Updated']];
+  portfolio.forEach(v => rows.push([v.name, v.cat, v.score, v.grade, v.risk, v.trend > 0 ? '+'+v.trend : v.trend, v.updated]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'ai-portfolio-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV exported', '📊');
+});
+
+// ── Toast ────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, icon = '✓') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  document.getElementById('toastIcon').textContent = icon;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>

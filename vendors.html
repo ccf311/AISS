@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Vendor Security Directory — AI Security Scorecard</title>
+<meta name="description" content="Browse security scorecards for 250+ AI tools, agents, and workflows. Filter by grade, category, and risk level.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660;
+  --orange:#E86A27; --orange-lt:#FDF0E8; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F9FAFB; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
+  --radius:10px; --shadow:0 4px 24px rgba(13,27,62,.10);
+  --grade-a:#1D9E75; --grade-b:#2D7DD2; --grade-c:#B45309; --grade-d:#C2410C; --grade-f:#E24B4A;
+  --grade-a-lt:#E6F7F2; --grade-b-lt:#EBF4FF; --grade-c-lt:#FEF9EE; --grade-d-lt:#FFF0E8; --grade-f-lt:#FCEBEB;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+
+/* ── Nav ── */
+nav{background:var(--navy);padding:0 24px;position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;height:68px;gap:28px}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:15px;font-weight:700;color:var(--white)}
+.nav-logo-mark{width:32px;height:32px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--white);flex-shrink:0}
+.nav-links{display:flex;gap:24px;margin-left:auto}
+.nav-links a{font-size:14px;font-weight:500;color:rgba(255,255,255,.6);transition:color .15s}
+.nav-links a:hover,.nav-links a.active{color:var(--white)}
+.nav-cta{margin-left:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:14px;padding:11px 22px;border-radius:var(--radius);cursor:pointer;transition:all .18s;border:none;line-height:1}
+.btn-primary{background:var(--orange);color:var(--white)}
+.btn-primary:hover{background:var(--orange-dim);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.25)}
+.btn-ghost:hover{border-color:rgba(255,255,255,.6)}
+
+/* ── Page header ── */
+.page-header{background:var(--navy);padding:56px 24px 0;position:relative;overflow:hidden}
+.page-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 70% 50%,rgba(232,106,39,.07),transparent)}
+.page-header-grid{position:relative;z-index:1;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;position:absolute;inset:0;pointer-events:none}
+.header-inner{max-width:1080px;margin:0 auto;position:relative;z-index:2}
+.eyebrow{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
+.page-title{font-family:var(--display);font-size:clamp(28px,4vw,44px);font-weight:700;line-height:1.1;color:var(--white);letter-spacing:-.02em;margin-bottom:12px}
+.page-subtitle{font-size:16px;color:rgba(255,255,255,.55);line-height:1.6;max-width:480px;margin-bottom:32px}
+.header-stats{display:flex;gap:36px;padding:28px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:8px}
+.hstat{text-align:left}
+.hstat-val{font-family:var(--display);font-size:26px;font-weight:700;color:var(--white)}
+.hstat-label{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+
+/* ── Search + filters ── */
+.controls-wrap{background:var(--white);border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:68px;z-index:90}
+.controls-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:220px;max-width:320px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--slate-lt);pointer-events:none}
+.search-input{width:100%;font-family:var(--body);font-size:14px;color:var(--slate);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px 10px 36px;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--orange);background:var(--white)}
+.filter-group{display:flex;gap:6px;align-items:center}
+.filter-label{font-size:12px;font-weight:500;color:var(--slate-lt);white-space:nowrap}
+.grade-btn{font-family:var(--display);font-size:12px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;background:var(--bg);color:var(--slate-lt)}
+.grade-btn:hover{border-color:currentColor}
+.grade-btn.active{border-color:transparent}
+.grade-btn[data-g="all"].active{background:var(--navy);color:var(--white)}
+.grade-btn[data-g="A"].active{background:var(--grade-a-lt);color:var(--grade-a);border-color:var(--grade-a)}
+.grade-btn[data-g="B"].active{background:var(--grade-b-lt);color:var(--grade-b);border-color:var(--grade-b)}
+.grade-btn[data-g="C"].active{background:var(--grade-c-lt);color:var(--grade-c);border-color:var(--grade-c)}
+.grade-btn[data-g="D"].active{background:var(--grade-d-lt);color:var(--grade-d);border-color:var(--grade-d)}
+.grade-btn[data-g="F"].active{background:var(--grade-f-lt);color:var(--grade-f);border-color:var(--grade-f)}
+.cat-select,.sort-select{font-family:var(--body);font-size:13px;color:var(--slate);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 32px 8px 12px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s}
+.cat-select:focus,.sort-select:focus{border-color:var(--orange)}
+.results-count{margin-left:auto;font-size:13px;color:var(--slate-lt);white-space:nowrap}
+
+/* ── Vendor grid ── */
+.grid-wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+.vendor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 24px}
+.empty-icon{font-size:40px;margin-bottom:16px;opacity:.3}
+.empty-title{font-family:var(--display);font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.empty-sub{font-size:14px;color:var(--slate-lt)}
+
+/* ── Vendor card ── */
+.vendor-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;position:relative;transition:box-shadow .2s,transform .2s,border-color .2s;display:flex;flex-direction:column;gap:16px}
+.vendor-card:hover{box-shadow:0 8px 32px rgba(13,27,62,.12);transform:translateY(-2px);border-color:rgba(13,27,62,.12)}
+.vendor-card-top{display:flex;align-items:flex-start;gap:14px}
+.vendor-logo{width:44px;height:44px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;font-weight:700;color:var(--white);flex-shrink:0;letter-spacing:-.02em}
+.vendor-meta{flex:1;min-width:0}
+.vendor-name{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy);line-height:1.2;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vendor-cat{font-size:11px;font-weight:600;color:var(--slate-lt);letter-spacing:.04em}
+.grade-ring-wrap{position:relative;flex-shrink:0}
+.grade-ring-wrap svg{display:block}
+.grade-ring-score{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;font-weight:700}
+
+/* ── Score bar ── */
+.score-bar-wrap{display:flex;flex-direction:column;gap:6px}
+.score-bar-row{display:flex;align-items:center;gap:8px}
+.sbl{font-size:11px;color:var(--slate-lt);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbr{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sbf{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.sbv{font-family:var(--display);font-size:11px;font-weight:600;width:24px;text-align:right;flex-shrink:0}
+
+/* ── Risk flag ── */
+.risk-flag{display:flex;align-items:flex-start;gap:7px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5}
+.risk-flag.high{background:var(--red-lt);color:#991B1B}
+.risk-flag.medium{background:var(--amber-lt);color:#92400E}
+.risk-flag.low{background:var(--green-lt);color:#065F46}
+.risk-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.risk-flag.high .risk-dot{background:var(--red)}
+.risk-flag.medium .risk-dot{background:var(--amber)}
+.risk-flag.low .risk-dot{background:var(--green)}
+
+/* ── Card footer ── */
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border)}
+.last-updated{font-size:11px;color:var(--slate-lt)}
+.view-link{font-family:var(--display);font-size:12px;font-weight:600;color:var(--orange);display:flex;align-items:center;gap:4px;transition:gap .15s}
+.view-link:hover{gap:7px}
+
+/* ── Grade badge on card ── */
+.grade-badge-sm{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;border-radius:6px;font-family:var(--display);font-size:13px;font-weight:700}
+.g-a{background:var(--grade-a-lt);color:var(--grade-a)}
+.g-b{background:var(--grade-b-lt);color:var(--grade-b)}
+.g-c{background:var(--grade-c-lt);color:var(--grade-c)}
+.g-d{background:var(--grade-d-lt);color:var(--grade-d)}
+.g-f{background:var(--grade-f-lt);color:var(--grade-f)}
+
+/* ── Footer ── */
+footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:48px 24px}
+.footer-inner{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap}
+.footer-links a{font-size:13px;color:rgba(255,255,255,.35);transition:color .15s}
+.footer-links a:hover{color:rgba(255,255,255,.7)}
+.footer-legal{font-size:12px;color:rgba(255,255,255,.25);margin-top:6px}
+
+/* ── Scan pulse ── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* ── Responsive ── */
+@media(max-width:900px){.vendor-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){
+  .vendor-grid{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .header-stats{gap:20px}
+  .controls-inner{gap:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .vendor-card{transition:none}
+  .sbf{transition:none}
+  .live-dot{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-mark">AI</div>
+      <span>AI Security Scorecard</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#how-it-works">How it works</a>
+      <a href="methodology.html">Methodology</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="vendors.html" class="active">Vendors</a>
+    </div>
+    <a href="login.html" class="btn btn-ghost" id="navAuthBtn" style="font-size:13px;padding:10px 20px">Sign in</a>
+    <a href="waitlist.html" class="btn btn-primary nav-cta" style="font-size:13px;padding:10px 20px">Get early access</a>
+  </div>
+</nav>
+<script>
+(function(){try{var s=JSON.parse(localStorage.getItem('aisc_session'));if(s&&s.email){var b=document.getElementById('navAuthBtn');b.textContent='Dashboard';b.href='dashboard.html';b.style.background='rgba(255,255,255,.1)';}}catch(e){}}());
+</script>
+
+<!-- ── PAGE HEADER ── -->
+<div class="page-header">
+  <div class="page-header-grid"></div>
+  <div class="header-inner">
+    <div class="eyebrow">AI Vendor Security Directory</div>
+    <h1 class="page-title">Know what you're deploying<br>before you deploy it.</h1>
+    <p class="page-subtitle">Every major AI tool, rated across 5 security dimensions. Updated continuously. Evidence-backed.</p>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-val">247</div>
+        <div class="hstat-label">Vendors scored</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" style="color:var(--amber)">38%</div>
+        <div class="hstat-label">Grade C or below</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" style="color:var(--red)">12</div>
+        <div class="hstat-label">Score changes today</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val">
+          <span class="live-dot"></span>Live
+        </div>
+        <div class="hstat-label">Continuously monitored</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONTROLS ── -->
+<div class="controls-wrap">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3 3" stroke-linecap="round"/></svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search vendors…" autocomplete="off">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Grade:</span>
+      <button class="grade-btn active" data-g="all">All</button>
+      <button class="grade-btn" data-g="A">A</button>
+      <button class="grade-btn" data-g="B">B</button>
+      <button class="grade-btn" data-g="C">C</button>
+      <button class="grade-btn" data-g="D">D</button>
+      <button class="grade-btn" data-g="F">F</button>
+    </div>
+    <select class="cat-select" id="catSelect">
+      <option value="all">All categories</option>
+      <option value="LLM / Chatbot">LLM / Chatbot</option>
+      <option value="Code Assistant">Code Assistant</option>
+      <option value="Image Generation">Image Generation</option>
+      <option value="Writing & Content">Writing &amp; Content</option>
+      <option value="Agent / Workflow">Agent / Workflow</option>
+      <option value="Data & Analytics">Data &amp; Analytics</option>
+    </select>
+    <select class="sort-select" id="sortSelect">
+      <option value="score-desc">Score: High → Low</option>
+      <option value="score-asc">Score: Low → High</option>
+      <option value="name-asc">Name: A → Z</option>
+      <option value="name-desc">Name: Z → A</option>
+    </select>
+    <div class="results-count" id="resultsCount"></div>
+  </div>
+</div>
+
+<!-- ── VENDOR GRID ── -->
+<div class="grid-wrap">
+  <div class="vendor-grid" id="vendorGrid"></div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="nav-logo" style="margin-bottom:6px">
+        <div class="nav-logo-mark">AI</div>
+        <span style="color:rgba(255,255,255,.5);font-size:14px">AI Security Scorecard</span>
+      </div>
+      <div class="footer-legal">© 2026 LMT Technology Solutions. All rights reserved.</div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html#framework">Methodology</a>
+      <a href="vendors.html">Vendors</a>
+      <a href="#">Blog</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="mailto:hello@aisecurityscorecard.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Vendor data ──────────────────────────────────────────────────────
+const vendors = [
+  // LLM / Chatbot
+  {id:"anthropic-claude",  name:"Anthropic Claude",       initials:"AC", cat:"LLM / Chatbot",       score:91, grade:"A", risk:"low",    updated:"2h ago",  detail:"scorecard-claude.html",
+   dims:[24,24,18,13,12], flag:"Minor docs gap in system prompt disclosure"},
+  {id:"openai-gpt4o",      name:"OpenAI GPT-4o",          initials:"OA", cat:"LLM / Chatbot",       score:87, grade:"B", risk:"low",    updated:"4h ago",  detail:null,
+   dims:[22,22,18,13,12], flag:"Training opt-out requires manual request"},
+  {id:"google-gemini",     name:"Google Gemini",           initials:"GG", cat:"LLM / Chatbot",       score:82, grade:"B", risk:"medium", updated:"6h ago",  detail:null,
+   dims:[20,22,17,12,11], flag:"Data retention unclear for Workspace users"},
+  {id:"cohere-command",    name:"Cohere Command",          initials:"CO", cat:"LLM / Chatbot",       score:79, grade:"B", risk:"low",    updated:"1d ago",  detail:null,
+   dims:[21,20,16,12,10], flag:"Limited public red-team disclosures"},
+  {id:"amazon-bedrock",    name:"Amazon Bedrock",          initials:"AB", cat:"LLM / Chatbot",       score:78, grade:"B", risk:"medium", updated:"3h ago",  detail:null,
+   dims:[20,20,16,12,10], flag:"Model-level transparency varies by provider"},
+  {id:"mistral-large",     name:"Mistral Large",           initials:"ML", cat:"LLM / Chatbot",       score:73, grade:"C", risk:"medium", updated:"2d ago",  detail:null,
+   dims:[19,18,15,11,10], flag:"No published SOC 2 report"},
+  {id:"meta-llama",        name:"Meta Llama API",          initials:"MA", cat:"LLM / Chatbot",       score:66, grade:"C", risk:"medium", updated:"1d ago",  detail:null,
+   dims:[17,18,14,10, 7], flag:"DPA not available for SMB customers"},
+  {id:"xai-grok",          name:"xAI Grok",               initials:"XG", cat:"LLM / Chatbot",       score:61, grade:"C", risk:"medium", updated:"5h ago",  detail:null,
+   dims:[15,17,13, 9, 7], flag:"Limited compliance documentation published"},
+  {id:"perplexity-ai",     name:"Perplexity AI",           initials:"PA", cat:"LLM / Chatbot",       score:58, grade:"D", risk:"high",   updated:"12h ago", detail:null,
+   dims:[13,16,12, 9, 8], flag:"Data retention policy recently changed"},
+
+  // Code Assistants
+  {id:"github-copilot",    name:"GitHub Copilot",          initials:"GC", cat:"Code Assistant",      score:85, grade:"B", risk:"low",    updated:"3h ago",  detail:null,
+   dims:[22,21,18,13,11], flag:"Code snippet retention opt-out unclear"},
+  {id:"amazon-codewhis",   name:"Amazon CodeWhisperer",    initials:"CW", cat:"Code Assistant",      score:80, grade:"B", risk:"low",    updated:"1d ago",  detail:null,
+   dims:[21,20,17,12,10], flag:"AWS-specific compliance scope limitations"},
+  {id:"tabnine",           name:"Tabnine",                 initials:"TN", cat:"Code Assistant",      score:72, grade:"C", risk:"medium", updated:"2d ago",  detail:null,
+   dims:[18,18,15,11,10], flag:"Self-hosted vs cloud controls differ"},
+  {id:"codeium",           name:"Codeium",                 initials:"CD", cat:"Code Assistant",      score:68, grade:"C", risk:"medium", updated:"1d ago",  detail:null,
+   dims:[17,18,14,10, 9], flag:"Audit log access limited to Enterprise"},
+  {id:"cursor-ide",        name:"Cursor (AI IDE)",         initials:"CU", cat:"Code Assistant",      score:61, grade:"C", risk:"medium", updated:"6h ago",  detail:null,
+   dims:[15,16,13,10, 7], flag:"System prompt partially extractable"},
+  {id:"replit-ai",         name:"Replit AI",               initials:"RA", cat:"Code Assistant",      score:55, grade:"D", risk:"high",   updated:"2d ago",  detail:null,
+   dims:[13,14,12, 9, 7], flag:"Code stored in US-only; no data residency"},
+
+  // Image Generation
+  {id:"adobe-firefly",     name:"Adobe Firefly",           initials:"AF", cat:"Image Generation",    score:88, grade:"B", risk:"low",    updated:"1d ago",  detail:null,
+   dims:[23,22,18,13,12], flag:"IP indemnification limited to Enterprise tier"},
+  {id:"dalle-openai",      name:"DALL-E 3 (OpenAI)",      initials:"DE", cat:"Image Generation",    score:83, grade:"B", risk:"low",    updated:"4h ago",  detail:null,
+   dims:[22,21,17,12,11], flag:"Content policy enforcement gaps reported"},
+  {id:"elevenlabs",        name:"ElevenLabs",              initials:"EL", cat:"Image Generation",    score:59, grade:"D", risk:"high",   updated:"8h ago",  detail:null,
+   dims:[14,16,12, 9, 8], flag:"Voice cloning misuse safeguards weak"},
+  {id:"runway-ml",         name:"Runway ML",               initials:"RW", cat:"Image Generation",    score:52, grade:"D", risk:"high",   updated:"3d ago",  detail:null,
+   dims:[12,14,11, 8, 7], flag:"Output IP rights unclear in ToS"},
+  {id:"midjourney",        name:"Midjourney",              initials:"MJ", cat:"Image Generation",    score:44, grade:"F", risk:"high",   updated:"2h ago",  detail:null,
+   dims:[10,12,10, 7, 5], flag:"Jailbreak resistance failed 18/30 tests"},
+  {id:"stability-ai",      name:"Stability AI",            initials:"SA", cat:"Image Generation",    score:41, grade:"F", risk:"high",   updated:"1d ago",  detail:null,
+   dims:[ 9,11, 9, 7, 5], flag:"SOC 2 Type II lapsed — score adjusted"},
+
+  // Writing & Content
+  {id:"grammarly",         name:"Grammarly Business",      initials:"GB", cat:"Writing & Content",   score:76, grade:"B", risk:"medium", updated:"2d ago",  detail:null,
+   dims:[20,19,16,11,10], flag:"Document content processed server-side"},
+  {id:"writer-ai",         name:"Writer",                  initials:"WR", cat:"Writing & Content",   score:71, grade:"C", risk:"medium", updated:"1d ago",  detail:null,
+   dims:[18,18,15,11, 9], flag:"Model fine-tuning data handling unclear"},
+  {id:"notion-ai",         name:"Notion AI",               initials:"NA", cat:"Writing & Content",   score:69, grade:"C", risk:"medium", updated:"3h ago",  detail:null,
+   dims:[17,18,14,11, 9], flag:"Workspace data used for model improvement"},
+  {id:"copy-ai",           name:"Copy.ai",                 initials:"CA", cat:"Writing & Content",   score:57, grade:"D", risk:"high",   updated:"4d ago",  detail:null,
+   dims:[13,15,12, 9, 8], flag:"Limited security documentation available"},
+  {id:"jasper-ai",         name:"Jasper AI",               initials:"JA", cat:"Writing & Content",   score:52, grade:"D", risk:"high",   updated:"3d ago",  detail:null,
+   dims:[12,14,11, 8, 7], flag:"DPA recently updated after audit finding"},
+
+  // Agent / Workflow
+  {id:"salesforce-ein",    name:"Salesforce Einstein",     initials:"SE", cat:"Agent / Workflow",    score:77, grade:"B", risk:"medium", updated:"2d ago",  detail:null,
+   dims:[20,20,16,12, 9], flag:"Agent action scope not fully documented"},
+  {id:"zapier-ai",         name:"Zapier AI",               initials:"ZA", cat:"Agent / Workflow",    score:64, grade:"C", risk:"medium", updated:"1d ago",  detail:null,
+   dims:[16,17,14,10, 7], flag:"Third-party tool access permissions broad"},
+  {id:"make-ai",           name:"Make (AI Features)",      initials:"MK", cat:"Agent / Workflow",    score:62, grade:"C", risk:"medium", updated:"2d ago",  detail:null,
+   dims:[16,16,13,10, 7], flag:"Data flow transparency limited"},
+  {id:"langchain-cloud",   name:"LangChain Cloud",         initials:"LC", cat:"Agent / Workflow",    score:49, grade:"F", risk:"high",   updated:"5d ago",  detail:null,
+   dims:[11,14,11, 7, 6], flag:"No published security controls documentation"},
+  {id:"autogpt",           name:"AutoGPT Cloud",           initials:"AG", cat:"Agent / Workflow",    score:38, grade:"F", risk:"high",   updated:"1w ago",  detail:null,
+   dims:[ 8,11, 9, 6, 4], flag:"Autonomous action scope undefined"},
+
+  // Data & Analytics
+  {id:"datarobot",         name:"DataRobot",               initials:"DR", cat:"Data & Analytics",    score:81, grade:"B", risk:"low",    updated:"2d ago",  detail:null,
+   dims:[21,20,17,12,11], flag:"Model explainability audit access limited"},
+  {id:"h2o-ai",            name:"H2O.ai",                  initials:"H2", cat:"Data & Analytics",    score:75, grade:"C", risk:"medium", updated:"3d ago",  detail:null,
+   dims:[19,19,16,11,10], flag:"Open-source vs enterprise controls differ"},
+  {id:"obviously-ai",      name:"Obviously AI",            initials:"OV", cat:"Data & Analytics",    score:54, grade:"D", risk:"high",   updated:"1w ago",  detail:null,
+   dims:[13,14,11, 9, 7], flag:"No independent security certification"},
+];
+
+// Dimension labels (short)
+const dimLabels = ["Data Privacy","Model Security","Infrastructure","Governance","Compliance"];
+
+const gradeColors = {A:"var(--grade-a)",B:"var(--grade-b)",C:"var(--grade-c)",D:"var(--grade-d)",F:"var(--grade-f)"};
+const gradeClass  = {A:"g-a",B:"g-b",C:"g-c",D:"g-d",F:"g-f"};
+const riskLabel   = {high:"High risk",medium:"Medium risk",low:"Low risk"};
+
+function scoreRingSVG(score, grade) {
+  const r = 20, cx = 26, cy = 26, circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  const col = gradeColors[grade];
+  return `<svg width="52" height="52" viewBox="0 0 52 52">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="4"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="4"
+      stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+  </svg>`;
+}
+
+function renderCard(v) {
+  const col = gradeColors[v.grade];
+  const dimsHTML = v.dims.map((d, i) => {
+    const maxPts = [25,25,20,15,15][i];
+    const pct = (d / maxPts * 100).toFixed(0);
+    return `<div class="score-bar-row">
+      <div class="sbl">${dimLabels[i]}</div>
+      <div class="sbr"><div class="sbf" style="width:${pct}%;background:${col}"></div></div>
+      <div class="sbv" style="color:${col}">${d}</div>
+    </div>`;
+  }).join('');
+
+  const linkEl = v.detail
+    ? `<a href="${v.detail}" class="view-link">View scorecard <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>`
+    : `<span class="view-link" style="color:var(--slate-lt);cursor:default;pointer-events:none">Coming soon</span>`;
+
+  return `<div class="vendor-card" data-grade="${v.grade}" data-cat="${v.cat}" data-name="${v.name.toLowerCase()}">
+    <div class="vendor-card-top">
+      <div class="vendor-logo">${v.initials}</div>
+      <div class="vendor-meta">
+        <div class="vendor-name">${v.name}</div>
+        <div class="vendor-cat">${v.cat}</div>
+      </div>
+      <div class="grade-ring-wrap">
+        ${scoreRingSVG(v.score, v.grade)}
+        <div class="grade-ring-score" style="color:${col}">${v.score}</div>
+      </div>
+    </div>
+    <div class="score-bar-wrap">${dimsHTML}</div>
+    <div class="risk-flag ${v.risk}">
+      <div class="risk-dot"></div>
+      <div><strong>${riskLabel[v.risk]}:</strong> ${v.flag}</div>
+    </div>
+    <div class="card-footer">
+      <div class="last-updated">Updated ${v.updated}</div>
+      ${linkEl}
+    </div>
+  </div>`;
+}
+
+// ── State ─────────────────────────────────────────────────────────────
+let activeGrade = "all";
+let activeCat   = "all";
+let sortBy      = "score-desc";
+let searchQ     = "";
+
+function filtered() {
+  return vendors
+    .filter(v => activeGrade === "all" || v.grade === activeGrade)
+    .filter(v => activeCat   === "all" || v.cat   === activeCat)
+    .filter(v => !searchQ    || v.name.toLowerCase().includes(searchQ));
+}
+
+function sorted(arr) {
+  return [...arr].sort((a, b) => {
+    if (sortBy === "score-desc") return b.score - a.score;
+    if (sortBy === "score-asc")  return a.score - b.score;
+    if (sortBy === "name-asc")   return a.name.localeCompare(b.name);
+    if (sortBy === "name-desc")  return b.name.localeCompare(a.name);
+  });
+}
+
+function render() {
+  const list = sorted(filtered());
+  const grid = document.getElementById("vendorGrid");
+  const count = document.getElementById("resultsCount");
+  count.textContent = `${list.length} vendor${list.length !== 1 ? 's' : ''}`;
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">No vendors match your filters</div>
+      <div class="empty-sub">Try adjusting the grade, category, or search term.</div>
+    </div>`;
+  } else {
+    grid.innerHTML = list.map(renderCard).join('');
+  }
+}
+
+// ── Event listeners ───────────────────────────────────────────────────
+document.querySelectorAll(".grade-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".grade-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeGrade = btn.dataset.g;
+    render();
+  });
+});
+
+document.getElementById("catSelect").addEventListener("change", e => {
+  activeCat = e.target.value;
+  render();
+});
+
+document.getElementById("sortSelect").addEventListener("change", e => {
+  sortBy = e.target.value;
+  render();
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchQ = e.target.value.trim().toLowerCase();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
