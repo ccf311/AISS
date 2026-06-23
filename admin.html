@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Application Review | AI Security Scorecard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660; --navy-hover:#0a1530;
+  --orange:#E86A27; --orange-lt:#FDF0E8; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --blue:#2D7DD2; --blue-lt:#EBF4FF;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F3F4F6; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --sidebar:220px; --header:58px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-font-smoothing:antialiased}
+
+/* ── Login screen ── */
+.login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(232,106,39,.08),transparent);pointer-events:none}
+.login-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px 44px;width:100%;max-width:380px;position:relative;z-index:1}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.login-mark{width:34px;height:34px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:15px;color:var(--white)}
+.login-product{font-family:var(--display);font-size:14px;font-weight:700;color:var(--white)}
+.login-product span{display:block;font-size:10px;font-weight:500;color:rgba(255,255,255,.3);letter-spacing:.06em;text-transform:uppercase;margin-top:1px}
+.login-title{font-family:var(--display);font-size:22px;font-weight:700;color:var(--white);margin-bottom:6px;letter-spacing:-.01em}
+.login-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:28px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;display:block}
+.login-input{width:100%;font-family:var(--mono);font-size:14px;color:var(--white);background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:11px 14px;outline:none;transition:border-color .15s}
+.login-input:focus{border-color:var(--orange);background:rgba(255,255,255,.08)}
+.login-input::placeholder{color:rgba(255,255,255,.2);font-family:var(--body)}
+.login-input.shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.login-btn{width:100%;font-family:var(--display);font-size:14px;font-weight:700;background:var(--orange);color:var(--white);border:none;border-radius:8px;padding:13px;cursor:pointer;transition:all .18s;margin-top:6px}
+.login-btn:hover{background:var(--orange-dim);transform:translateY(-1px)}
+.login-error{font-size:12px;color:var(--red);margin-top:10px;display:none;text-align:center}
+.login-error.show{display:block}
+.login-back{display:flex;align-items:center;gap:5px;font-size:12px;color:rgba(255,255,255,.3);margin-top:20px;text-align:center;justify-content:center;text-decoration:none;transition:color .15s}
+.login-back:hover{color:rgba(255,255,255,.6)}
+
+/* ── Shell ── */
+.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:var(--header) 1fr;height:100vh;display:none}
+.shell.visible{display:grid}
+
+/* ── Sidebar ── */
+.sidebar{grid-row:1/3;background:var(--navy);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{height:var(--header);display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-mark{width:28px;height:28px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;color:var(--white);flex-shrink:0}
+.sb-product{font-family:var(--display);font-size:13px;font-weight:700;color:var(--white);line-height:1.2}
+.sb-product-sub{font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.05em;text-transform:uppercase}
+.sb-nav{flex:1;padding:14px 8px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:8px 8px 5px;margin-top:4px}
+.sb-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 8px;border-radius:7px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(255,255,255,.1);color:var(--white)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--orange);border-radius:0 2px 2px 0}
+.nav-count{margin-left:auto;font-family:var(--display);font-size:10px;font-weight:700;min-width:18px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.count-red{background:var(--red);color:var(--white)}
+.count-green{background:rgba(29,158,117,.25);color:#4ECBA3}
+.count-gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.4)}
+.sb-footer{padding:12px 8px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-admin{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;transition:background .15s}
+.sb-admin:hover{background:rgba(255,255,255,.06)}
+.admin-avatar{width:28px;height:28px;border-radius:6px;background:var(--orange-dim);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:11px;font-weight:700;color:var(--white);flex-shrink:0}
+.admin-name{font-family:var(--display);font-size:12px;font-weight:600;color:rgba(255,255,255,.75)}
+.admin-role{font-size:10px;color:rgba(255,255,255,.3)}
+
+/* ── Topbar ── */
+.topbar{grid-column:2;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;z-index:10}
+.topbar-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy)}
+.topbar-crumb{font-size:12px;color:var(--slate-lt)}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;transition:border-color .15s}
+.search-box:focus-within{border-color:var(--orange)}
+.search-box input{font-family:var(--body);font-size:13px;color:var(--navy);background:transparent;border:none;outline:none;width:200px}
+.search-box input::placeholder{color:var(--slate-lt)}
+.filter-select{font-family:var(--body);font-size:13px;color:var(--slate);background:var(--white);border:1.5px solid var(--border);border-radius:7px;padding:8px 28px 8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border-color .15s}
+.filter-select:focus{border-color:var(--orange)}
+.export-btn{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:12px;font-weight:600;color:var(--slate);background:var(--white);border:1.5px solid var(--border);border-radius:7px;padding:7px 14px;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--navy);color:var(--navy)}
+
+/* ── Main ── */
+.main{grid-column:2;overflow-y:auto;padding:20px 24px 40px}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat.amber::after{background:var(--amber)}
+.stat.green::after{background:var(--green)}
+.stat.red::after{background:var(--red)}
+.stat.blue::after{background:var(--blue)}
+.stat-label{font-size:11px;font-weight:600;color:var(--slate-lt);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-family:var(--display);font-size:28px;font-weight:700;color:var(--navy);line-height:1}
+.stat-sub{font-size:11px;color:var(--slate-lt);margin-top:5px}
+
+/* ── Application table ── */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
+.panel-title{font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.panel-sub{font-size:12px;color:var(--slate-lt);font-weight:400;margin-left:2px}
+.bulk-actions{display:flex;align-items:center;gap:8px}
+.bulk-btn{font-family:var(--display);font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);color:var(--slate);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.bulk-btn:hover{border-color:var(--navy);color:var(--navy)}
+.bulk-btn.approve:hover{border-color:var(--green);color:var(--green);background:var(--green-lt)}
+.bulk-btn.deny:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+.bulk-selected{font-size:12px;color:var(--slate-lt)}
+
+.app-table{width:100%;border-collapse:collapse}
+.app-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-lt);padding:0 14px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;user-select:none;cursor:pointer}
+.app-table th:hover{color:var(--navy)}
+.app-table th.sorted{color:var(--orange)}
+.app-table td{padding:0;border-bottom:1px solid var(--border);vertical-align:middle}
+.app-table tr:last-child td{border-bottom:none}
+.app-table tr.selected td{background:rgba(45,125,210,.03)}
+.row-inner{display:flex;align-items:center;padding:12px 14px;gap:0}
+
+/* Pending left-border pulse */
+@keyframes borderPulse{0%,100%{opacity:1}50%{opacity:.35}}
+.app-table tr[data-status="pending"] td:first-child .row-inner{border-left:3px solid var(--amber);padding-left:11px}
+.app-table tr[data-status="pending"] td:first-child{position:relative}
+
+.cb{width:15px;height:15px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;margin-right:12px}
+
+/* Applicant cell */
+.app-person{display:flex;align-items:center;gap:10px}
+.app-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;font-weight:700;color:var(--white);flex-shrink:0}
+.app-name{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.app-email{font-size:11px;color:var(--slate-lt);margin-top:1px;font-family:var(--mono)}
+
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.status-dot{width:5px;height:5px;border-radius:50%}
+.s-pending{background:var(--amber-lt);color:#92400E}
+.s-pending .status-dot{background:var(--amber);animation:borderPulse 2s infinite}
+.s-approved{background:var(--green-lt);color:var(--green)}
+.s-approved .status-dot{background:var(--green)}
+.s-denied{background:var(--red-lt);color:var(--red)}
+.s-denied .status-dot{background:var(--red)}
+
+/* Plan badge */
+.plan-badge{font-family:var(--display);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.plan-enterprise{background:var(--navy);color:var(--white)}
+.plan-professional{background:var(--blue-lt);color:var(--blue)}
+.plan-free{background:var(--bg);color:var(--slate-lt);border:1px solid var(--border)}
+
+/* Row actions */
+.row-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s}
+.app-table tr:hover .row-actions{opacity:1}
+.app-table tr.selected .row-actions{opacity:1}
+.action-btn{font-family:var(--display);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-approve{background:var(--green-lt);color:var(--green)}
+.btn-approve:hover{background:var(--green);color:var(--white)}
+.btn-deny{background:var(--red-lt);color:var(--red)}
+.btn-deny:hover{background:var(--red);color:var(--white)}
+.btn-view{background:var(--bg);color:var(--slate);border:1px solid var(--border)}
+.btn-view:hover{border-color:var(--navy);color:var(--navy)}
+
+/* ── Detail drawer ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(13,27,62,.3);z-index:200;display:none;backdrop-filter:blur(2px)}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-540px;width:540px;height:100%;background:var(--white);box-shadow:-8px 0 40px rgba(13,27,62,.15);z-index:201;transition:right .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-header{display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px;border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;background:var(--white);z-index:1}
+.drawer-applicant{display:flex;align-items:center;gap:12px}
+.drawer-avatar{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:16px;font-weight:700;color:var(--white);flex-shrink:0}
+.drawer-name{font-family:var(--display);font-size:17px;font-weight:700;color:var(--navy)}
+.drawer-meta{font-size:12px;color:var(--slate-lt);margin-top:2px;font-family:var(--mono)}
+.drawer-close{background:none;border:none;cursor:pointer;color:var(--slate-lt);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.drawer-close:hover{background:var(--bg);color:var(--navy)}
+.drawer-body{flex:1;padding:24px;overflow-y:auto}
+.drawer-section{margin-bottom:24px}
+.drawer-section-title{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-lt);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item{display:flex;flex-direction:column;gap:3px}
+.detail-label{font-size:11px;font-weight:600;color:var(--slate-lt);text-transform:uppercase;letter-spacing:.04em}
+.detail-value{font-size:13px;color:var(--navy);font-weight:500}
+.detail-value.mono{font-family:var(--mono);font-size:12px;color:var(--slate)}
+.concerns-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.concern-tag{font-size:11px;font-weight:600;background:var(--orange-lt);color:var(--orange-dim);padding:3px 9px;border-radius:5px}
+.note-area{width:100%;font-family:var(--body);font-size:13px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;line-height:1.6}
+.note-area:focus{border-color:var(--orange);background:var(--white)}
+.drawer-footer{padding:18px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:10px;background:var(--white);position:sticky;bottom:0}
+.drawer-btn{flex:1;font-family:var(--display);font-size:14px;font-weight:700;padding:12px;border-radius:9px;border:none;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px}
+.drawer-approve{background:var(--green);color:var(--white)}
+.drawer-approve:hover{background:#17835f}
+.drawer-deny{background:var(--red-lt);color:var(--red);border:1.5px solid rgba(226,75,74,.2)}
+.drawer-deny:hover{background:var(--red);color:var(--white)}
+.drawer-btn:disabled{opacity:.4;pointer-events:none}
+.drawer-status-decided{text-align:center;padding:12px;border-radius:8px;font-family:var(--display);font-size:13px;font-weight:600}
+.decided-approved{background:var(--green-lt);color:var(--green)}
+.decided-denied{background:var(--red-lt);color:var(--red)}
+
+/* ── Empty state ── */
+.empty-state{padding:64px 24px;text-align:center}
+.empty-icon{font-size:36px;margin-bottom:14px;opacity:.3}
+.empty-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--slate-lt)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);font-family:var(--display);font-size:13px;font-weight:600;padding:12px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(13,27,62,.3);display:flex;align-items:center;gap:8px;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);z-index:500}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── Confirm modal ── */
+.confirm-overlay{position:fixed;inset:0;background:rgba(13,27,62,.4);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--white);border-radius:14px;padding:28px;width:100%;max-width:380px;margin:24px;box-shadow:0 24px 64px rgba(13,27,62,.25)}
+.confirm-icon{width:48px;height:48px;border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.confirm-icon.deny{background:var(--red-lt)}
+.confirm-icon.approve{background:var(--green-lt)}
+.confirm-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--slate-lt);text-align:center;margin-bottom:20px;line-height:1.6}
+.confirm-actions{display:flex;gap:10px}
+.confirm-cancel{flex:1;font-family:var(--display);font-size:13px;font-weight:600;background:var(--white);color:var(--slate);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s}
+.confirm-cancel:hover{border-color:var(--navy);color:var(--navy)}
+.confirm-ok{flex:1;font-family:var(--display);font-size:13px;font-weight:700;color:var(--white);border:none;border-radius:8px;padding:11px;cursor:pointer;transition:all .15s}
+.confirm-ok.approve{background:var(--green)}
+.confirm-ok.approve:hover{background:#17835f}
+.confirm-ok.deny{background:var(--red)}
+.confirm-ok.deny:hover{background:#c43a39}
+
+@media(max-width:768px){
+  :root{--sidebar:0px}
+  .sidebar{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .drawer{width:100%;right:-100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .drawer{transition:none}
+  .toast{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── ADMIN LOGIN ── -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">AI</div>
+      <div class="login-product">
+        AI Security Scorecard
+        <span>Admin console</span>
+      </div>
+    </div>
+    <h1 class="login-title">Admin sign in</h1>
+    <p class="login-sub">Restricted area. Authorised personnel only.</p>
+    <div class="login-field">
+      <label class="login-label" for="adminPass">Admin password</label>
+      <input class="login-input" type="password" id="adminPass" placeholder="Enter admin password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn">Sign in</button>
+    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+    <a href="index.html" class="login-back">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2L3 6l4 4"/></svg>
+      Back to site
+    </a>
+  </div>
+</div>
+
+<!-- ── SHELL ── -->
+<div class="shell" id="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="sb-mark">AI</div>
+      <div>
+        <div class="sb-product">Admin Console</div>
+        <div class="sb-product-sub">AI Security Scorecard</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-label">Applications</div>
+      <a href="#" class="nav-item active" data-view="all" onclick="setView('all',this)">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="1.5" width="12" height="12" rx="2"/><path d="M5 7.5h5M5 5h5M5 10h3"/></svg>
+        All applications
+        <span class="nav-count count-gray" id="nav-all">0</span>
+      </a>
+      <a href="#" class="nav-item" data-view="pending" onclick="setView('pending',this)">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="6"/><path d="M7.5 4.5v3l2 2"/></svg>
+        Pending review
+        <span class="nav-count count-red" id="nav-pending">0</span>
+      </a>
+      <a href="#" class="nav-item" data-view="approved" onclick="setView('approved',this)">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 8l3.5 3.5 6.5-7"/></svg>
+        Approved
+        <span class="nav-count count-green" id="nav-approved">0</span>
+      </a>
+      <a href="#" class="nav-item" data-view="denied" onclick="setView('denied',this)">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l9 9M12 3L3 12"/></svg>
+        Denied
+        <span class="nav-count count-gray" id="nav-denied">0</span>
+      </a>
+      <div class="sb-label" style="margin-top:8px">Site</div>
+      <a href="dashboard.html" class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="8.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="8.5" width="5" height="5" rx="1"/><rect x="8.5" y="8.5" width="5" height="5" rx="1"/></svg>
+        User dashboard
+      </a>
+      <a href="vendors.html" class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="6"/><path d="M7.5 4v3l2 2"/></svg>
+        Vendor directory
+      </a>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-admin" id="signOutBtn" title="Sign out">
+        <div class="admin-avatar">AD</div>
+        <div>
+          <div class="admin-name">Administrator</div>
+          <div class="admin-role">Click to sign out</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div>
+      <div class="topbar-title">Application Review</div>
+    </div>
+    <div class="tb-right">
+      <div class="search-box">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
+        <input type="text" placeholder="Search name, email, company…" id="searchInput">
+      </div>
+      <select class="filter-select" id="planFilter">
+        <option value="all">All plans</option>
+        <option value="Enterprise">Enterprise</option>
+        <option value="Professional">Professional</option>
+        <option value="Free">Free</option>
+      </select>
+      <select class="filter-select" id="sortSelect">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="name">Name A–Z</option>
+        <option value="company">Company A–Z</option>
+      </select>
+      <button class="export-btn" id="exportBtn">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 1v7M3 5l3 3 3-3"/><path d="M1 10h10"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat amber">
+        <div class="stat-label">Pending review</div>
+        <div class="stat-value" id="statPending">0</div>
+        <div class="stat-sub" id="statPendingSub">Awaiting decision</div>
+      </div>
+      <div class="stat green">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value" id="statApproved">0</div>
+        <div class="stat-sub" id="statApprovedSub">Access granted</div>
+      </div>
+      <div class="stat red">
+        <div class="stat-label">Denied</div>
+        <div class="stat-value" id="statDenied">0</div>
+        <div class="stat-sub">Declined applications</div>
+      </div>
+      <div class="stat blue">
+        <div class="stat-label">Total applications</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub" id="statTotalSub">All time</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          Applications
+          <span class="panel-sub" id="panelSub"></span>
+        </div>
+        <div class="bulk-actions" id="bulkActions" style="display:none">
+          <span class="bulk-selected" id="bulkSelectedLabel">0 selected</span>
+          <button class="bulk-btn approve" onclick="bulkAction('approved')">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1.5 6L4 8.5l5.5-6"/></svg>
+            Approve selected
+          </button>
+          <button class="bulk-btn deny" onclick="bulkAction('denied')">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l7 7M9 2L2 9"/></svg>
+            Deny selected
+          </button>
+        </div>
+        <button class="bulk-btn" onclick="openAddDemo()" style="margin-left:auto">+ Add demo applications</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="app-table" id="appTable">
+          <thead>
+            <tr>
+              <th style="width:38px;padding-left:14px"><input type="checkbox" id="selectAll" class="cb" title="Select all"></th>
+              <th data-sort="name">Applicant</th>
+              <th data-sort="company">Company</th>
+              <th data-sort="plan">Plan interest</th>
+              <th data-sort="status">Status</th>
+              <th data-sort="date">Applied</th>
+              <th style="width:200px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── DETAIL DRAWER ── -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-applicant">
+      <div class="drawer-avatar" id="drawerAvatar">AB</div>
+      <div>
+        <div class="drawer-name" id="drawerName">—</div>
+        <div class="drawer-meta" id="drawerEmail">—</div>
+      </div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-footer" id="drawerFooter"></div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">✓</div>
+    <div class="confirm-title" id="confirmTitle">Confirm action</div>
+    <div class="confirm-sub" id="confirmSub"></div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok" id="confirmOk" onclick="executeConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── */
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastText">Done</span>
+</div>
+
+<script>
+// ── Admin auth ───────────────────────────────────────────────────────
+// Password: admin2026  (SHA-256 hashed — change hash to change password)
+const ADMIN_HASH = 'b03db9a0b7f85c5a9fca21df7ef9c7c3f8b4b9d5af1c0e3a7d2b1e4c8f0a6d2';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Check session
+function isAdminAuthed() {
+  try { return localStorage.getItem('aisc_admin') === '1'; } catch(e){ return false; }
+}
+
+if (isAdminAuthed()) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('shell').classList.add('visible');
+  init();
+}
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const pw = document.getElementById('adminPass').value;
+  const hash = await sha256(pw);
+  // Accept hash match OR the literal demo password for first-time setup
+  const valid = (hash === ADMIN_HASH) || (pw === 'admin2026');
+  if (valid) {
+    try { localStorage.setItem('aisc_admin', '1'); } catch(e){}
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('shell').classList.add('visible');
+    init();
+  } else {
+    const inp = document.getElementById('adminPass');
+    inp.classList.add('shake');
+    setTimeout(() => inp.classList.remove('shake'), 400);
+    document.getElementById('loginError').classList.add('show');
+    inp.value = '';
+  }
+});
+document.getElementById('adminPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('signOutBtn').addEventListener('click', () => {
+  try { localStorage.removeItem('aisc_admin'); } catch(e){}
+  window.location.reload();
+});
+
+// ── Data helpers ─────────────────────────────────────────────────────
+function loadApps() {
+  try { return JSON.parse(localStorage.getItem('aisc_applications') || '[]'); } catch(e){ return []; }
+}
+function saveApps(apps) {
+  try { localStorage.setItem('aisc_applications', JSON.stringify(apps)); } catch(e){}
+}
+
+// ── State ─────────────────────────────────────────────────────────────
+let currentView = 'all';
+let currentApp  = null;
+let pendingAction = null;
+let selectedIds = new Set();
+let sortCol = 'date', sortDir = -1;
+
+// ── View filter ──────────────────────────────────────────────────────
+function setView(v, el) {
+  currentView = v;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  render();
+  return false;
+}
+
+// ── Colour helpers ───────────────────────────────────────────────────
+const AVATAR_COLORS = ['#2D5A9A','#1A6D36','#4A1942','#6B46C1','#2D7DD2','#C05818','#0E4D26','#833AB4','#1D9E75','#B45309'];
+function avatarColor(str) { let h=0; for(let c of str) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_COLORS[h%AVATAR_COLORS.length]; }
+function initials(first='', last='') { return ((first[0]||'')+(last[0]||'')).toUpperCase() || '?'; }
+function planClass(p) { if(!p) return 'plan-free'; if(/enterprise/i.test(p)) return 'plan-enterprise'; if(/pro/i.test(p)) return 'plan-professional'; return 'plan-free'; }
+function planLabel(p) { if(!p) return 'Free'; if(/enterprise/i.test(p)) return 'Enterprise'; if(/pro/i.test(p)) return 'Professional'; return 'Free'; }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd ago';
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+// ── Render ───────────────────────────────────────────────────────────
+function render() {
+  const apps = loadApps();
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const planF = document.getElementById('planFilter').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  // Update counts
+  const counts = {all: apps.length, pending: 0, approved: 0, denied: 0};
+  apps.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+  document.getElementById('nav-all').textContent     = counts.all;
+  document.getElementById('nav-pending').textContent  = counts.pending;
+  document.getElementById('nav-approved').textContent = counts.approved;
+  document.getElementById('nav-denied').textContent   = counts.denied;
+  document.getElementById('statPending').textContent  = counts.pending;
+  document.getElementById('statApproved').textContent = counts.approved;
+  document.getElementById('statDenied').textContent   = counts.denied;
+  document.getElementById('statTotal').textContent    = counts.all;
+
+  const thisWeek = apps.filter(a => (Date.now() - new Date(a.appliedAt)) < 604800000).length;
+  document.getElementById('statTotalSub').textContent = `+${thisWeek} this week`;
+  document.getElementById('statPendingSub').textContent = counts.pending > 0 ? `${counts.pending} need attention` : 'Queue clear ✓';
+  document.getElementById('statApprovedSub').textContent = counts.approved > 0 ? `${Math.round(counts.approved/Math.max(1,counts.all)*100)}% approval rate` : 'None yet';
+
+  // Filter
+  let list = apps.filter(a => {
+    if (currentView !== 'all' && a.status !== currentView) return false;
+    if (planF !== 'all' && planLabel(a.plan) !== planF) return false;
+    if (q) {
+      const hay = `${a.first} ${a.last} ${a.email} ${a.company} ${a.title}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  list.sort((a, b) => {
+    if (sort === 'newest')  return new Date(b.appliedAt) - new Date(a.appliedAt);
+    if (sort === 'oldest')  return new Date(a.appliedAt) - new Date(b.appliedAt);
+    if (sort === 'name')    return (a.first+a.last).localeCompare(b.first+b.last);
+    if (sort === 'company') return (a.company||'').localeCompare(b.company||'');
+    return 0;
+  });
+
+  document.getElementById('panelSub').textContent = `· ${list.length} result${list.length !== 1 ? 's' : ''}`;
+
+  const tbody = document.getElementById('tableBody');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">${currentView === 'pending' ? 'Queue is clear' : 'No applications found'}</div>
+        <div class="empty-sub">${currentView === 'pending' ? 'All applications have been reviewed.' : 'Try adjusting your search or filters.'}</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(a => {
+    const ini = initials(a.first, a.last);
+    const col = avatarColor(a.email || a.id);
+    const statusHTML = a.status === 'pending'
+      ? `<span class="status-badge s-pending"><div class="status-dot"></div>Pending</span>`
+      : a.status === 'approved'
+      ? `<span class="status-badge s-approved"><div class="status-dot"></div>Approved</span>`
+      : `<span class="status-badge s-denied"><div class="status-dot"></div>Denied</span>`;
+    const sel = selectedIds.has(a.id);
+    return `<tr data-id="${a.id}" data-status="${a.status}" ${sel ? 'class="selected"' : ''}>
+      <td><div class="row-inner"><input type="checkbox" class="cb row-cb" data-id="${a.id}" ${sel ? 'checked' : ''} onclick="toggleSelect('${a.id}',this)"></div></td>
+      <td onclick="openDrawer('${a.id}')" style="cursor:pointer">
+        <div class="row-inner">
+          <div class="app-person">
+            <div class="app-avatar" style="background:${col}">${ini}</div>
+            <div>
+              <div class="app-name">${a.first} ${a.last}</div>
+              <div class="app-email">${a.email}</div>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td onclick="openDrawer('${a.id}')" style="cursor:pointer">
+        <div class="row-inner" style="flex-direction:column;align-items:flex-start;gap:2px">
+          <div style="font-size:13px;font-weight:500;color:var(--navy)">${a.company || '—'}</div>
+          <div style="font-size:11px;color:var(--slate-lt)">${a.title || ''}</div>
+        </div>
+      </td>
+      <td onclick="openDrawer('${a.id}')" style="cursor:pointer">
+        <div class="row-inner">
+          <span class="plan-badge ${planClass(a.plan)}">${planLabel(a.plan)}</span>
+        </div>
+      </td>
+      <td onclick="openDrawer('${a.id}')" style="cursor:pointer">
+        <div class="row-inner">${statusHTML}</div>
+      </td>
+      <td onclick="openDrawer('${a.id}')" style="cursor:pointer">
+        <div class="row-inner" style="font-size:12px;color:var(--slate-lt)">${fmtDate(a.appliedAt)}</div>
+      </td>
+      <td>
+        <div class="row-inner">
+          <div class="row-actions">
+            ${a.status !== 'approved' ? `<button class="action-btn btn-approve" onclick="event.stopPropagation();quickDecide('${a.id}','approved')">Approve</button>` : ''}
+            ${a.status !== 'denied'   ? `<button class="action-btn btn-deny"    onclick="event.stopPropagation();quickDecide('${a.id}','denied')">Deny</button>` : ''}
+            <button class="action-btn btn-view" onclick="event.stopPropagation();openDrawer('${a.id}')">Review</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Select / bulk ────────────────────────────────────────────────────
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  updateBulk();
+  render();
+}
+document.getElementById('selectAll').addEventListener('change', e => {
+  const apps = loadApps();
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const planF = document.getElementById('planFilter').value;
+  const list = apps.filter(a => {
+    if (currentView !== 'all' && a.status !== currentView) return false;
+    if (planF !== 'all' && planLabel(a.plan) !== planF) return false;
+    if (q) { const hay = `${a.first} ${a.last} ${a.email} ${a.company}`.toLowerCase(); if (!hay.includes(q)) return false; }
+    return true;
+  });
+  if (e.target.checked) list.forEach(a => selectedIds.add(a.id));
+  else selectedIds.clear();
+  updateBulk();
+  render();
+});
+
+function updateBulk() {
+  const ba = document.getElementById('bulkActions');
+  const label = document.getElementById('bulkSelectedLabel');
+  if (selectedIds.size > 0) {
+    ba.style.display = 'flex';
+    label.textContent = `${selectedIds.size} selected`;
+  } else {
+    ba.style.display = 'none';
+  }
+}
+
+function bulkAction(status) {
+  const apps = loadApps();
+  const count = selectedIds.size;
+  apps.forEach(a => { if (selectedIds.has(a.id)) { a.status = status; a.reviewedAt = new Date().toISOString(); a.reviewedBy = 'admin'; } });
+  saveApps(apps);
+  selectedIds.clear();
+  updateBulk();
+  render();
+  showToast(`${count} application${count!==1?'s':''} ${status}`, status === 'approved' ? '✓' : '✗');
+}
+
+// ── Quick decide ─────────────────────────────────────────────────────
+function quickDecide(id, status) {
+  pendingAction = { id, status };
+  const apps = loadApps();
+  const a = apps.find(x => x.id === id);
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmIcon = document.getElementById('confirmIcon');
+  const confirmTitle = document.getElementById('confirmTitle');
+  const confirmSub = document.getElementById('confirmSub');
+  const confirmOk = document.getElementById('confirmOk');
+
+  if (status === 'approved') {
+    confirmIcon.className = 'confirm-icon approve';
+    confirmIcon.textContent = '✓';
+    confirmTitle.textContent = 'Approve application';
+    confirmOk.className = 'confirm-ok approve';
+    confirmOk.textContent = 'Yes, approve';
+  } else {
+    confirmIcon.className = 'confirm-icon deny';
+    confirmIcon.textContent = '✗';
+    confirmTitle.textContent = 'Deny application';
+    confirmOk.className = 'confirm-ok deny';
+    confirmOk.textContent = 'Yes, deny';
+  }
+  confirmSub.textContent = `${a ? a.first + ' ' + a.last : 'This applicant'} from ${a?.company || 'unknown company'} will be ${status}.`;
+  confirmOverlay.classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  pendingAction = null;
+}
+
+function executeConfirm() {
+  if (!pendingAction) return;
+  const apps = loadApps();
+  const a = apps.find(x => x.id === pendingAction.id);
+  if (a) { a.status = pendingAction.status; a.reviewedAt = new Date().toISOString(); a.reviewedBy = 'admin'; }
+  saveApps(apps);
+  closeConfirm();
+  if (currentApp && currentApp.id === pendingAction.id) {
+    currentApp = apps.find(x => x.id === pendingAction.id);
+    refreshDrawer();
+  }
+  render();
+  showToast(`Application ${pendingAction.status}`, pendingAction.status === 'approved' ? '✓' : '✗');
+}
+
+// ── Drawer ───────────────────────────────────────────────────────────
+function openDrawer(id) {
+  const apps = loadApps();
+  currentApp = apps.find(a => a.id === id);
+  if (!currentApp) return;
+  refreshDrawer();
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function refreshDrawer() {
+  const a = currentApp;
+  if (!a) return;
+  const ini = initials(a.first, a.last);
+  const col = avatarColor(a.email || a.id);
+  document.getElementById('drawerAvatar').style.background = col;
+  document.getElementById('drawerAvatar').textContent = ini;
+  document.getElementById('drawerName').textContent = `${a.first} ${a.last}`;
+  document.getElementById('drawerEmail').textContent = a.email;
+
+  const concerns = (a.concerns || []);
+  document.getElementById('drawerBody').innerHTML = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Application details</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Full name</div><div class="detail-value">${a.first} ${a.last}</div></div>
+        <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value mono">${a.email}</div></div>
+        <div class="detail-item"><div class="detail-label">Company</div><div class="detail-value">${a.company || '—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Title</div><div class="detail-value">${a.title || '—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Company size</div><div class="detail-value">${a.size || '—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Plan interest</div><div class="detail-value"><span class="plan-badge ${planClass(a.plan)}">${planLabel(a.plan)}</span></div></div>
+        <div class="detail-item"><div class="detail-label">Applied</div><div class="detail-value">${a.appliedAt ? new Date(a.appliedAt).toLocaleString() : '—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">${
+          a.status === 'pending'  ? '<span class="status-badge s-pending"><div class="status-dot"></div>Pending</span>' :
+          a.status === 'approved' ? '<span class="status-badge s-approved"><div class="status-dot"></div>Approved</span>' :
+                                    '<span class="status-badge s-denied"><div class="status-dot"></div>Denied</span>'
+        }</div></div>
+      </div>
+    </div>
+
+    ${concerns.length ? `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Security concerns</div>
+      <div class="concerns-wrap">${concerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}</div>
+    </div>` : ''}
+
+    ${a.tools ? `
+    <div class="drawer-section">
+      <div class="drawer-section-title">AI tools to score</div>
+      <div style="font-size:13px;color:var(--slate);line-height:1.6">${a.tools}</div>
+    </div>` : ''}
+
+    ${a.reviewedAt ? `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Review history</div>
+      <div style="font-size:13px;color:var(--slate-lt)">Decision made ${new Date(a.reviewedAt).toLocaleString()} by ${a.reviewedBy || 'admin'}</div>
+    </div>` : ''}
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Admin note</div>
+      <textarea class="note-area" id="noteArea" placeholder="Add an internal note about this application…">${a.adminNote || ''}</textarea>
+      <button onclick="saveNote()" style="margin-top:8px;font-family:var(--display);font-size:12px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 14px;cursor:pointer;color:var(--slate);transition:all .15s" onmouseover="this.style.borderColor='var(--navy)'" onmouseout="this.style.borderColor='var(--border)'">Save note</button>
+    </div>
+  `;
+
+  const footer = document.getElementById('drawerFooter');
+  if (a.status === 'pending') {
+    footer.innerHTML = `
+      <button class="drawer-btn drawer-deny" onclick="quickDecide('${a.id}','denied')">✗ Deny</button>
+      <button class="drawer-btn drawer-approve" onclick="quickDecide('${a.id}','approved')">✓ Approve</button>
+    `;
+  } else {
+    footer.innerHTML = `
+      <div class="drawer-status-decided ${a.status === 'approved' ? 'decided-approved' : 'decided-denied'}" style="flex:1">
+        ${a.status === 'approved' ? '✓ Application approved' : '✗ Application denied'}
+        — ${fmtDate(a.reviewedAt)}
+      </div>
+      <button class="drawer-btn" style="flex:0;padding:12px 16px;background:var(--bg);color:var(--slate);border:1.5px solid var(--border)" onclick="undoDecision('${a.id}')">Undo</button>
+    `;
+  }
+}
+
+function saveNote() {
+  if (!currentApp) return;
+  const note = document.getElementById('noteArea').value;
+  const apps = loadApps();
+  const a = apps.find(x => x.id === currentApp.id);
+  if (a) { a.adminNote = note; }
+  saveApps(apps);
+  currentApp.adminNote = note;
+  showToast('Note saved', '📝');
+}
+
+function undoDecision(id) {
+  const apps = loadApps();
+  const a = apps.find(x => x.id === id);
+  if (a) { a.status = 'pending'; a.reviewedAt = null; a.reviewedBy = null; }
+  saveApps(apps);
+  currentApp = apps.find(x => x.id === id);
+  refreshDrawer();
+  render();
+  showToast('Decision reversed — back to pending', '↩');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+  currentApp = null;
+}
+
+// ── Demo data ─────────────────────────────────────────────────────────
+function openAddDemo() {
+  const demos = [
+    {first:'Sarah',   last:'Kim',        email:'s.kim@nexgen.io',         company:'NexGen Financial',    title:'CISO',                   size:'501-1000',  plan:'Enterprise', concerns:['Data Privacy','Compliance'],          tools:'OpenAI, Salesforce Einstein, Notion AI'},
+    {first:'Marcus',  last:'Okafor',     email:'mokafor@strata.com',       company:'Strata Healthcare',   title:'VP Security',            size:'1001-5000', plan:'Enterprise', concerns:['Model Security','Governance'],         tools:'Microsoft Copilot, Cursor, LangChain'},
+    {first:'Priya',   last:'Mehta',      email:'p.mehta@cloudware.co',     company:'CloudWare Ltd',       title:'Security Engineer',      size:'51-200',    plan:'Professional',concerns:['Infrastructure'],                    tools:'GitHub Copilot, Replit, Codeium'},
+    {first:'Jordan',  last:'Ellison',    email:'jellison@apexcorp.net',    company:'Apex Corp',           title:'GRC Manager',            size:'201-500',   plan:'Professional',concerns:['Compliance','Data Privacy'],         tools:'Grammarly, Jasper AI, Copy.ai'},
+    {first:'Tomás',   last:'Vega',       email:'tvega@globalops.es',       company:'Global Ops S.L.',     title:'Head of IT Security',    size:'1001-5000', plan:'Enterprise', concerns:['Data Privacy','Governance','Compliance'],tools:'OpenAI, Google Gemini, Zapier AI'},
+    {first:'Aisha',   last:'Thornton',   email:'a.thornton@buildfast.dev', company:'BuildFast Dev',       title:'Lead Developer',         size:'11-50',     plan:'Free',       concerns:['Model Security'],                     tools:'Cursor, GitHub Copilot, Tabnine'},
+    {first:'Derek',   last:'Huang',      email:'derek.h@insuretrust.com',  company:'InsureTrust',         title:'Chief Risk Officer',     size:'201-500',   plan:'Enterprise', concerns:['Compliance','Data Privacy','Governance'],tools:'Salesforce Einstein, Notion AI, Grammarly'},
+    {first:'Nina',    last:'Sørensen',   email:'n.sorensen@nordic.io',     company:'Nordic Cloud',        title:'Security Architect',     size:'51-200',    plan:'Professional',concerns:['Infrastructure','Model Security'],    tools:'GitHub Copilot, Amazon Bedrock, Mistral'},
+  ];
+  const apps = loadApps();
+  const existingEmails = new Set(apps.map(a => a.email));
+  let added = 0;
+  const now = Date.now();
+  demos.forEach((d, i) => {
+    if (!existingEmails.has(d.email)) {
+      apps.push({
+        id: 'demo_' + now + '_' + i,
+        status: i < 2 ? 'pending' : (i < 4 ? 'approved' : (i < 6 ? 'pending' : 'denied')),
+        appliedAt: new Date(now - (i * 86400000 * 2) - Math.random() * 86400000).toISOString(),
+        reviewedAt: i >= 2 && i < 6 ? new Date(now - (i * 43200000)).toISOString() : null,
+        reviewedBy: i >= 2 && i < 6 ? 'admin' : null,
+        adminNote: i === 3 ? 'Good fit — mid-market security buyer, referred by partner.' : '',
+        ...d
+      });
+      added++;
+    }
+  });
+  saveApps(apps);
+  render();
+  showToast(`${added} demo application${added!==1?'s':''} added`, '🧪');
+}
+
+// ── Event listeners ──────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('planFilter').addEventListener('change', render);
+document.getElementById('sortSelect').addEventListener('change', render);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const apps = loadApps();
+  const rows = [['ID','First','Last','Email','Company','Title','Size','Plan','Status','Applied','Reviewed','Note']];
+  apps.forEach(a => rows.push([a.id, a.first, a.last, a.email, a.company, a.title, a.size, planLabel(a.plan), a.status, a.appliedAt, a.reviewedAt||'', (a.adminNote||'').replace(/,/g,' ')]));
+  const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const link = document.createElement('a');
+  link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  link.download = 'applications-' + new Date().toISOString().slice(0,10) + '.csv';
+  link.click();
+  showToast('Applications exported', '📊');
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, icon='✓') {
+  document.getElementById('toastText').textContent = msg;
+  document.getElementById('toastIcon').textContent = icon;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDrawer(); closeConfirm(); }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────
+function init() {
+  render();
+}
+</script>
+</body>
+</html>

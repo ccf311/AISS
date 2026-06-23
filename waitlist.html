@@ -778,6 +778,29 @@ async function submitForm(){
   // In production: POST to your form handler endpoint (Formspree, your API, etc.)
   // await fetch("https://formspree.io/f/YOUR_ID", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(formData) });
 
+  // Save application to localStorage for admin review
+  try {
+    const apps = JSON.parse(localStorage.getItem('aisc_applications') || '[]');
+    apps.push({
+      id: 'app_' + Date.now(),
+      status: 'pending',
+      appliedAt: new Date().toISOString(),
+      first: formData.first,
+      last: formData.last,
+      email: formData.email,
+      company: formData.company,
+      title: formData.title,
+      size: formData.size,
+      plan: formData.plan,
+      concerns: formData.concerns,
+      tools: formData.tools,
+      adminNote: '',
+      reviewedAt: null,
+      reviewedBy: null,
+    });
+    localStorage.setItem('aisc_applications', JSON.stringify(apps));
+  } catch(e) {}
+
   // Simulate network delay, then generate AI message
   await new Promise(r => setTimeout(r, 1200));
 
