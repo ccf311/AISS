@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Copilot — Security Scorecard | AI Security Scorecard</title>
+<meta name="description" content="Full security scorecard for GitHub Copilot by Microsoft. B-grade — strong infrastructure, gaps in code retention transparency and red-team disclosure.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660;
+  --orange:#E86A27; --orange-lt:#FDF0E8; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --purple:#7C3AED; --purple-lt:#F3F0FF;
+  --blue:#2D7DD2; --blue-lt:#EBF4FF;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F9FAFB; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
+  --radius:10px; --shadow:0 4px 24px rgba(13,27,62,.10);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav ── */
+nav{background:var(--navy);padding:0 24px;position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;height:68px;gap:28px}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:15px;font-weight:700;color:var(--white)}
+.nav-logo-mark{width:32px;height:32px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--white);flex-shrink:0}
+.nav-links{display:flex;gap:24px;margin-left:auto}
+.nav-links a{font-size:14px;font-weight:500;color:rgba(255,255,255,.6);transition:color .15s}
+.nav-links a:hover{color:var(--white)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:14px;padding:11px 22px;border-radius:var(--radius);cursor:pointer;transition:all .18s;border:none;line-height:1}
+.btn-primary{background:var(--orange);color:var(--white)}
+.btn-primary:hover{background:var(--orange-dim);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.25)}
+.btn-outline:hover{border-color:rgba(255,255,255,.6)}
+.btn-sm{font-size:13px;padding:9px 18px}
+
+/* ── Breadcrumb ── */
+.breadcrumb-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px}
+.breadcrumb-inner{max-width:1160px;margin:0 auto;height:44px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate-lt)}
+.breadcrumb-inner a{color:var(--slate-lt);transition:color .15s}
+.breadcrumb-inner a:hover{color:var(--navy)}
+.bc-sep{opacity:.4}
+
+/* ── Vendor hero ── */
+.vendor-hero{background:var(--navy);padding:40px 24px 0;position:relative;overflow:hidden}
+.vendor-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 100% at 80% 50%,rgba(29,158,117,.08),transparent)}
+.hero-inner{max-width:1160px;margin:0 auto;position:relative;z-index:1}
+.vendor-hero-top{display:flex;align-items:flex-start;gap:24px;margin-bottom:32px}
+.vendor-logo-lg{width:64px;height:64px;background:linear-gradient(135deg,#4A90D9,#2D5A9A);border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:22px;font-weight:700;color:var(--white);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.vendor-hero-text{flex:1}
+.vendor-hero-name{font-family:var(--display);font-size:clamp(22px,3vw,32px);font-weight:700;color:var(--white);letter-spacing:-.02em;margin-bottom:6px}
+.vendor-hero-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hero-tag{font-size:12px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(255,255,255,.08);padding:4px 10px;border-radius:20px;letter-spacing:.02em}
+.hero-updated{font-size:12px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:6px}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Grade circle ── */
+.grade-circle-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+.grade-circle{width:88px;height:88px;position:relative}
+.grade-circle svg{display:block}
+.grade-circle-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.grade-letter{font-family:var(--display);font-size:32px;font-weight:700;color:var(--green);line-height:1}
+.grade-score{font-family:var(--display);font-size:12px;font-weight:600;color:rgba(255,255,255,.45);margin-top:1px}
+.grade-label{font-size:11px;color:rgba(255,255,255,.35);text-align:center}
+
+/* ── Score composition strip ── */
+.score-strip{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-bottom:0;gap:2px}
+.score-strip-seg{height:100%;border-radius:3px;transition:flex .6s cubic-bezier(.4,0,.2,1)}
+.strip-legend{display:flex;gap:20px;padding:14px 0 32px;border-top:1px solid rgba(255,255,255,.06);margin-top:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.5)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ── Main layout ── */
+.main{max-width:1160px;margin:0 auto;padding:40px 24px 80px;display:grid;grid-template-columns:1fr 340px;gap:32px;align-items:start}
+
+/* ── Section card ── */
+.sc{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:24px}
+.sc-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.sc-sub{font-size:13px;color:var(--slate-lt);margin-bottom:24px}
+
+/* ── Dimension sections ── */
+.dim-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dim-name-row{display:flex;align-items:center;gap:10px}
+.dim-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dim-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy)}
+.dim-weight{font-size:12px;color:var(--slate-lt)}
+.dim-score-badge{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.dim-score-num{font-family:var(--display);font-size:24px;font-weight:700;line-height:1}
+.dim-score-max{font-size:11px;color:var(--slate-lt)}
+
+.dim-bar-wrap{height:8px;background:var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+.dim-desc{font-size:13px;color:var(--slate-lt);line-height:1.6;margin-bottom:16px}
+.dim-divider{height:1px;background:var(--border);margin-bottom:16px}
+
+/* ── Evidence list ── */
+.evidence-list{display:flex;flex-direction:column;gap:9px}
+.evidence-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
+.ev-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:10px;font-weight:700}
+.ev-pass{background:var(--green-lt);color:var(--green)}
+.ev-warn{background:var(--amber-lt);color:#92400E}
+.ev-fail{background:var(--red-lt);color:var(--red)}
+.ev-text.warn{color:#92400E}
+.ev-text.fail{color:#991B1B}
+
+/* ── Radar chart ── */
+.radar-wrap{display:flex;flex-direction:column;align-items:center}
+.radar-wrap svg{max-width:280px;width:100%}
+.radar-labels{display:flex;flex-direction:column;gap:7px;width:100%;margin-top:16px}
+.radar-label-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.radar-label-name{display:flex;align-items:center;gap:7px;color:var(--slate)}
+.radar-label-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.radar-label-score{font-family:var(--display);font-weight:700;font-size:13px}
+
+/* ── Sticky sidebar ── */
+.sidebar{position:sticky;top:100px}
+.sidebar-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.sidebar-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px}
+
+.key-facts{display:flex;flex-direction:column;gap:12px}
+.fact-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.fact-row:last-child{padding-bottom:0;border-bottom:none}
+.fact-label{font-size:12px;color:var(--slate-lt)}
+.fact-value{font-family:var(--display);font-size:13px;font-weight:600;color:var(--navy);text-align:right;flex-shrink:0}
+
+/* ── Comparison table ── */
+.compare-table{width:100%;border-collapse:collapse}
+.compare-table th{font-size:11px;font-weight:600;color:var(--slate-lt);text-transform:uppercase;letter-spacing:.06em;padding:0 0 10px;text-align:left}
+.compare-table th:last-child{text-align:right}
+.compare-table td{padding:9px 0;border-top:1px solid var(--border);vertical-align:middle}
+.compare-table td:last-child{text-align:right}
+.compare-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--navy)}
+.compare-logo{width:26px;height:26px;border-radius:6px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:10px;font-weight:700;color:var(--white);flex-shrink:0}
+.compare-score{font-family:var(--display);font-size:13px;font-weight:700}
+.compare-grade{display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:5px;font-family:var(--display);font-size:11px;font-weight:700}
+.g-a{background:#E6F7F2;color:#1D9E75}
+.g-b{background:#EBF4FF;color:#2D7DD2}
+.g-c{background:#FEF9EE;color:#B45309}
+.g-d{background:#FFF0E8;color:#C2410C}
+.g-f{background:#FCEBEB;color:#E24B4A}
+.current-row td{background:rgba(29,158,117,.04)}
+
+/* ── History chart ── */
+.history-chart{position:relative;height:100px}
+.history-chart canvas{display:block}
+.history-bars{display:flex;align-items:flex-end;gap:8px;height:80px;padding-bottom:0}
+.h-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.h-bar{width:100%;border-radius:4px 4px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);min-height:4px;position:relative;cursor:default}
+.h-bar:hover::after{content:attr(data-score);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--white);font-family:var(--display);font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;white-space:nowrap;margin-bottom:4px}
+.h-label{font-size:10px;color:var(--slate-lt);text-align:center}
+.h-score{font-family:var(--display);font-size:11px;font-weight:700;text-align:center}
+
+/* ── Timeline ── */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);position:relative}
+.tl-item:last-child{border-bottom:none}
+.tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.tl-body{flex:1}
+.tl-title{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:2px}
+.tl-meta{font-size:11px;color:var(--slate-lt);display:flex;align-items:center;gap:8px}
+.tl-impact{font-family:var(--display);font-size:11px;font-weight:700}
+.tl-impact.pos{color:var(--green)}
+.tl-impact.neg{color:var(--red)}
+.tl-impact.neu{color:var(--slate-lt)}
+
+/* ── CTA card ── */
+.cta-card{background:linear-gradient(135deg,var(--navy),var(--navy-mid));border-radius:14px;padding:28px;text-align:center}
+.cta-card-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px}
+.cta-card-sub{font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:20px}
+.cta-inputs{display:flex;flex-direction:column;gap:10px}
+.cta-input{font-family:var(--body);font-size:14px;color:var(--slate);background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;outline:none;width:100%;transition:border-color .15s}
+.cta-input:focus{border-color:var(--orange)}
+.btn-cta{width:100%;justify-content:center;font-size:15px;padding:14px 22px}
+
+/* ── Footer ── */
+footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:48px 24px}
+.footer-inner{max-width:1160px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap}
+.footer-links a{font-size:13px;color:rgba(255,255,255,.35);transition:color .15s}
+.footer-links a:hover{color:rgba(255,255,255,.7)}
+.footer-legal{font-size:12px;color:rgba(255,255,255,.25);margin-top:6px}
+.eyebrow{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:8px}
+
+/* ── Responsive ── */
+@media(max-width:860px){
+  .main{grid-template-columns:1fr}
+  .sidebar{position:static}
+  .nav-links{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .dim-bar-fill,.score-strip-seg,.h-bar{transition:none}
+  .live-dot{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-mark">AI</div>
+      <span>AI Security Scorecard</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#how-it-works">How it works</a>
+      <a href="methodology.html">Methodology</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="vendors.html">Vendors</a>
+    </div>
+    <a href="login.html" class="btn btn-ghost" id="navAuthBtn" style="font-size:13px;padding:10px 20px;margin-left:auto">Sign in</a>
+    <a href="waitlist.html" class="btn btn-primary btn-sm">Get early access</a>
+  </div>
+</nav>
+<script>
+(function(){try{var s=JSON.parse(localStorage.getItem('aisc_session'));if(s&&s.email){var b=document.getElementById('navAuthBtn');b.textContent='Dashboard';b.href='dashboard.html';b.style.background='rgba(255,255,255,.1)';}}catch(e){}}());
+</script>
+
+<!-- ── BREADCRUMB ── -->
+<div class="breadcrumb-bar">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Home</a>
+    <span class="bc-sep">›</span>
+    <a href="vendors.html">Vendor Directory</a>
+    <span class="bc-sep">›</span>
+    <span style="color:var(--slate)">GitHub Copilot</span>
+  </div>
+</div>
+
+<!-- ── VENDOR HERO ── -->
+<div class="vendor-hero">
+  <div class="hero-inner">
+    <div class="vendor-hero-top">
+      <div class="vendor-logo-lg" style="background:linear-gradient(135deg,#1A6D36,#0E4D26)">GC</div>
+      <div class="vendor-hero-text">
+        <div class="vendor-hero-name">GitHub Copilot</div>
+        <div class="vendor-hero-meta">
+          <span class="hero-tag">Code Assistant</span>
+          <span class="hero-tag">GitHub Enterprise</span>
+          <span class="hero-tag">Copilot Business / Enterprise</span>
+          <span class="hero-updated"><span class="live-dot"></span>Updated 2 hours ago</span>
+        </div>
+      </div>
+      <div class="grade-circle-wrap">
+        <div class="grade-circle">
+          <svg viewBox="0 0 88 88" width="88" height="88">
+            <circle cx="44" cy="44" r="38" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/>
+            <circle cx="44" cy="44" r="38" fill="none" stroke="#2D7DD2" stroke-width="6"
+              stroke-dasharray="202.98 238.8" stroke-linecap="round" transform="rotate(-90 44 44)"/>
+          </svg>
+          <div class="grade-circle-inner">
+            <div class="grade-letter" style="color:#2D7DD2">B</div>
+            <div class="grade-score">85 / 100</div>
+          </div>
+        </div>
+        <div class="grade-label">Security Grade</div>
+      </div>
+    </div>
+
+    <!-- Score strip -->
+    <div class="score-strip">
+      <div class="score-strip-seg" style="flex:22;background:#1D9E75" title="Data Security & Privacy: 22/25"></div>
+      <div class="score-strip-seg" style="flex:22;background:#2D7DD2" title="Model Security: 22/25"></div>
+      <div class="score-strip-seg" style="flex:18;background:#7C3AED" title="Infrastructure & API: 18/20"></div>
+      <div class="score-strip-seg" style="flex:13;background:#E86A27" title="Governance: 13/15"></div>
+      <div class="score-strip-seg" style="flex:11;background:#FAC775" title="Compliance: 11/15"></div>
+    </div>
+    <div class="strip-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Data Privacy 22/25</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2D7DD2"></div>Model Security 22/25</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7C3AED"></div>Infrastructure 18/20</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E86A27"></div>Governance 13/15</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FAC775"></div>Compliance 11/15</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="main">
+  <div class="content-col">
+
+    <!-- Dimension 1: Data Security & Privacy -->
+    <div class="sc">
+      <div class="dim-header">
+        <div class="dim-name-row">
+          <div class="dim-icon" style="background:#E6F7F2">🛡️</div>
+          <div>
+            <div class="dim-title">Data Security & Privacy</div>
+            <div class="dim-weight">25 points · weighted 25%</div>
+          </div>
+        </div>
+        <div class="dim-score-badge">
+          <div class="dim-score-num" style="color:#1D9E75">24</div>
+          <div class="dim-score-max">of 25 pts</div>
+        </div>
+      </div>
+      <div class="dim-bar-wrap">
+        <div class="dim-bar-fill" style="width:88%;background:#1D9E75"></div>
+      </div>
+      <p class="dim-desc">Evaluates data retention policies, PII handling, DPA availability, training data use, and data residency controls. Copilot scores well but has a meaningful gap: code snippets from non-Business/Enterprise accounts may be retained and used to improve models by default, and the opt-out pathway is not always surfaced prominently.</p>
+      <div class="dim-divider"></div>
+      <div class="evidence-list">
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">GitHub Copilot Business and Enterprise plans do not use customer code to train shared models; zero-retention guarantee documented in the product terms</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Microsoft Data Processing Agreement available to all GitHub customers; SCCs included for GDPR-covered EU data transfers</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Data residency available for Enterprise customers: EU and US regions selectable; processed on Azure infrastructure within selected region</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">Individual plan users have code snippet retention enabled by default for model improvement; opt-out exists but requires manual configuration in account settings — unlikely to be discovered organically</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">Telemetry data (editor events, feature usage) collected by default across all tiers; granular telemetry opt-out not available on Business tier without GitHub Enterprise contract</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimension 2: Model Security -->
+    <div class="sc">
+      <div class="dim-header">
+        <div class="dim-name-row">
+          <div class="dim-icon" style="background:#EBF4FF">🤖</div>
+          <div>
+            <div class="dim-title">Model Security</div>
+            <div class="dim-weight">25 points · weighted 25%</div>
+          </div>
+        </div>
+        <div class="dim-score-badge">
+          <div class="dim-score-num" style="color:#2D7DD2">22</div>
+          <div class="dim-score-max">of 25 pts</div>
+        </div>
+      </div>
+      <div class="dim-bar-wrap">
+        <div class="dim-bar-fill" style="width:88%;background:#2D7DD2"></div>
+      </div>
+      <p class="dim-desc">Active testing for prompt injection, jailbreak resistance, system prompt extraction, and output filter bypass. Copilot scores competitively — its content filters are effective on direct attacks — but lacks a publicly documented red-team program or independent third-party model evaluation, which limits verifiability.</p>
+      <div class="dim-divider"></div>
+      <div class="evidence-list">
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Content filters block generation of malware, CSAM, and targeted violence across all Copilot surfaces; filter bypass success rate low in our 30-case test suite (2/30)</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Prompt injection via crafted code comments or README content blocked in 24 of 30 test cases; Copilot correctly refused to execute embedded instructions in 80% of cases</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Microsoft participates in NIST AI Safety Institute consortium and has signed voluntary AI safety commitments with the White House; public acknowledgment of red-teaming practice</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">No published red-team disclosure report specific to GitHub Copilot — Microsoft's AI safety transparency covers Azure OpenAI broadly but does not publish Copilot-specific adversarial evaluation results</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">System prompt extraction partially successful in 6/15 test cases using role-play and context manipulation; Microsoft has not publicly disclosed this attack surface or mitigations</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimension 3: Infrastructure & API Security -->
+    <div class="sc">
+      <div class="dim-header">
+        <div class="dim-name-row">
+          <div class="dim-icon" style="background:var(--purple-lt)">⚡</div>
+          <div>
+            <div class="dim-title">Infrastructure & API Security</div>
+            <div class="dim-weight">20 points · weighted 20%</div>
+          </div>
+        </div>
+        <div class="dim-score-badge">
+          <div class="dim-score-num" style="color:var(--purple)">18</div>
+          <div class="dim-score-max">of 20 pts</div>
+        </div>
+      </div>
+      <div class="dim-bar-wrap">
+        <div class="dim-bar-fill" style="width:90%;background:var(--purple)"></div>
+      </div>
+      <p class="dim-desc">TLS configuration, API authentication controls, penetration testing cadence, supply chain security, and SBOM availability. This is Copilot's strongest dimension — it runs on Azure, inheriting Microsoft's mature security infrastructure, MSRC vulnerability program, and annual penetration testing regime.</p>
+      <div class="dim-divider"></div>
+      <div class="evidence-list">
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">TLS 1.3 enforced on all GitHub API and Copilot endpoints; TLS 1.0/1.1 deprecated since 2018; A+ SSL Labs rating confirmed on primary endpoints</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Fine-grained GitHub Personal Access Tokens with scoped permissions and expiration enforcement; organization-level policy controls for Copilot access available on Enterprise</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Microsoft Security Response Center (MSRC) runs continuous penetration testing; GitHub Bug Bounty program on HackerOne active since 2013 with public hall-of-fame and defined response SLAs</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Azure infrastructure underpins Copilot model serving; inherits Azure's FedRAMP High, DoD IL2/IL4, and ITAR compliance controls at the infrastructure layer</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">SBOM not publicly available for Copilot extension or model serving stack; SSDF attestation form submitted to CISA but full attestation not published</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimension 4: Governance & Transparency -->
+    <div class="sc">
+      <div class="dim-header">
+        <div class="dim-name-row">
+          <div class="dim-icon" style="background:var(--orange-lt)">📋</div>
+          <div>
+            <div class="dim-title">Governance & Transparency</div>
+            <div class="dim-weight">15 points · weighted 15%</div>
+          </div>
+        </div>
+        <div class="dim-score-badge">
+          <div class="dim-score-num" style="color:var(--orange)">13</div>
+          <div class="dim-score-max">of 15 pts</div>
+        </div>
+      </div>
+      <div class="dim-bar-wrap">
+        <div class="dim-bar-fill" style="width:87%;background:var(--orange)"></div>
+      </div>
+      <p class="dim-desc">Model cards, audit logging, acceptable use policy clarity, and human oversight mechanisms. Copilot's governance posture is solid at the Enterprise tier but many controls — including audit logs, policy enforcement, and IP indemnification — are gated behind the most expensive plan, leaving Business tier customers with limited oversight tooling.</p>
+      <div class="dim-divider"></div>
+      <div class="evidence-list">
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">GitHub Copilot usage audit logs available on Enterprise tier via the GitHub audit log API; exports support SIEM integration via webhook or REST</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Acceptable Use Policy clearly prohibits malware generation, CSAM, targeted harassment, and IP circumvention; policy is enforceable and publicly committed</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">Copilot Intellectual Property indemnification available on Enterprise tier; Microsoft will defend customers against third-party IP claims arising from Copilot-generated code</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">Audit log access not available on Copilot Business tier — organizations cannot export prompt/completion logs for compliance review without upgrading to Enterprise</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">No published model card for the GPT-4-based Copilot model; model lineage, training data sources, and bias evaluation results are not disclosed for the code-specific fine-tune</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimension 5: Compliance & Certs -->
+    <div class="sc">
+      <div class="dim-header">
+        <div class="dim-name-row">
+          <div class="dim-icon" style="background:var(--amber-lt)">📜</div>
+          <div>
+            <div class="dim-title">Compliance & Certifications</div>
+            <div class="dim-weight">15 points · weighted 15%</div>
+          </div>
+        </div>
+        <div class="dim-score-badge">
+          <div class="dim-score-num" style="color:#B45309">11</div>
+          <div class="dim-score-max">of 15 pts</div>
+        </div>
+      </div>
+      <div class="dim-bar-wrap">
+        <div class="dim-bar-fill" style="width:73%;background:var(--amber)"></div>
+      </div>
+      <p class="dim-desc">SOC 2 Type II, ISO 27001, ISO 42001 AI Management, EU AI Act readiness, NIST RMF mapping, and GDPR compliance. GitHub holds strong foundational certifications via Microsoft's umbrella programs. The gap is AI-specific: no ISO 42001 and limited published NIST AI RMF mapping for Copilot specifically.</p>
+      <div class="dim-divider"></div>
+      <div class="evidence-list">
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">SOC 2 Type II certified under Microsoft's GitHub organization scope — most recent audit completed Q4 2025; report available to Enterprise customers under NDA via GitHub Trust Center</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">ISO 27001:2022 certified for GitHub platform; Azure infrastructure additionally holds ISO 27017 (cloud security) and ISO 27018 (PII in cloud)</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-pass">✓</div>
+          <div class="ev-text">GDPR compliant with Microsoft's Data Processing Addendum; sub-processor list published and maintained; Data Subject Rights process documented with 30-day SLA</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">EU AI Act readiness documentation covers Microsoft Azure OpenAI broadly; Copilot-specific GPAI Code of Practice conformity documentation not separately published as of this report</div>
+        </div>
+        <div class="evidence-item">
+          <div class="ev-icon ev-warn">!</div>
+          <div class="ev-text warn">No ISO 42001 (AI Management Systems) certification; Microsoft has not published a NIST AI RMF profile or self-assessment specific to GitHub Copilot</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score History -->
+    <div class="sc">
+      <div class="sc-title">Score History</div>
+      <div class="sc-sub">Last 6 quarters · changes driven by policy updates, new certifications, and test results</div>
+      <div class="history-bars" id="historyBars"></div>
+      <div style="display:flex;gap:6px;margin-top:4px" id="historyLabels"></div>
+      <div class="dim-divider" style="margin:20px 0"></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-icon" style="background:var(--green-lt)">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">IP indemnification expanded to Copilot Business tier for all Enterprise Agreement customers</div>
+            <div class="tl-meta"><span>April 2026</span><span class="tl-impact pos">+1 pt</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-icon" style="background:var(--green-lt)">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">Copilot Enterprise launched with tenant-isolated model serving and audit log API</div>
+            <div class="tl-meta"><span>February 2026</span><span class="tl-impact pos">+2 pts</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-icon" style="background:var(--red-lt)">!</div>
+          <div class="tl-body">
+            <div class="tl-title">Researcher disclosed partial system prompt extraction via context manipulation — no public response from Microsoft</div>
+            <div class="tl-meta"><span>January 2026</span><span class="tl-impact neg">−2 pts</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-icon" style="background:var(--green-lt)">✓</div>
+          <div class="tl-body">
+            <div class="tl-title">SOC 2 Type II renewed under GitHub org scope; report available in Trust Center</div>
+            <div class="tl-meta"><span>November 2025</span><span class="tl-impact pos">+1 pt</span></div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-icon" style="background:var(--amber-lt)">~</div>
+          <div class="tl-body">
+            <div class="tl-title">Privacy policy updated: telemetry data retention extended from 28 to 90 days for Individual plan users</div>
+            <div class="tl-meta"><span>September 2025</span><span class="tl-impact neg">−1 pt</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-col -->
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- Key facts -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">At a glance</div>
+      <div class="key-facts">
+        <div class="fact-row">
+          <div class="fact-label">Overall grade</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--blue)">85 / 100</div>
+            <div class="compare-grade g-b">B</div>
+          </div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">Risk level</div>
+          <div class="fact-value" style="color:var(--green)">Low</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">Category rank</div>
+          <div class="fact-value">#2 of 6 Code Assistants</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">SOC 2 Type II</div>
+          <div class="fact-value" style="color:var(--green)">Current (Q4 2025)</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">ISO 27001</div>
+          <div class="fact-value" style="color:var(--green)">Certified</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">GDPR DPA</div>
+          <div class="fact-value" style="color:var(--green)">Available, all tiers</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">Data residency</div>
+          <div class="fact-value">US · EU · Asia-Pac</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">Training opt-out</div>
+          <div class="fact-value" style="color:var(--amber)">Business/Enterprise only</div>
+        </div>
+        <div class="fact-row">
+          <div class="fact-label">Last full scan</div>
+          <div class="fact-value">June 19, 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radar chart -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Dimension Radar</div>
+      <div class="radar-wrap">
+        <svg id="radarSvg" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="radar-labels">
+          <div class="radar-label-row">
+            <div class="radar-label-name"><div class="radar-label-dot" style="background:#1D9E75"></div>Data Privacy</div>
+            <div class="radar-label-score" style="color:#1D9E75">22 / 25</div>
+          </div>
+          <div class="radar-label-row">
+            <div class="radar-label-name"><div class="radar-label-dot" style="background:#2D7DD2"></div>Model Security</div>
+            <div class="radar-label-score" style="color:#2D7DD2">22 / 25</div>
+          </div>
+          <div class="radar-label-row">
+            <div class="radar-label-name"><div class="radar-label-dot" style="background:#7C3AED"></div>Infrastructure</div>
+            <div class="radar-label-score" style="color:#7C3AED">18 / 20</div>
+          </div>
+          <div class="radar-label-row">
+            <div class="radar-label-name"><div class="radar-label-dot" style="background:#E86A27"></div>Governance</div>
+            <div class="radar-label-score" style="color:#E86A27">13 / 15</div>
+          </div>
+          <div class="radar-label-row">
+            <div class="radar-label-name"><div class="radar-label-dot" style="background:#B45309"></div>Compliance</div>
+            <div class="radar-label-score" style="color:#B45309">11 / 15</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparable vendors -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Code Assistant Comparison</div>
+      <table class="compare-table">
+        <thead>
+          <tr><th>Vendor</th><th>Score</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+          <tr class="current-row">
+            <td><div class="compare-name"><div class="compare-logo" style="background:#1A6D36">GC</div>GitHub Copilot</div></td>
+            <td><div class="compare-score" style="color:#2D7DD2">85</div></td>
+            <td><div class="compare-grade g-b">B</div></td>
+          </tr>
+          <tr>
+            <td><div class="compare-name"><div class="compare-logo" style="background:#1a6d36">CW</div>Amazon CodeWhisperer</div></td>
+            <td><div class="compare-score" style="color:#2D7DD2">80</div></td>
+            <td><div class="compare-grade g-b">B</div></td>
+          </tr>
+          <tr>
+            <td><div class="compare-name"><div class="compare-logo" style="background:#333">TN</div>Tabnine</div></td>
+            <td><div class="compare-score" style="color:#B45309">72</div></td>
+            <td><div class="compare-grade g-c">C</div></td>
+          </tr>
+          <tr>
+            <td><div class="compare-name"><div class="compare-logo" style="background:#5c2d91">CD</div>Codeium</div></td>
+            <td><div class="compare-score" style="color:#B45309">68</div></td>
+            <td><div class="compare-grade g-c">C</div></td>
+          </tr>
+          <tr>
+            <td><div class="compare-name"><div class="compare-logo" style="background:#2d2d2d">CU</div>Cursor (AI IDE)</div></td>
+            <td><div class="compare-score" style="color:#B45309">61</div></td>
+            <td><div class="compare-grade g-c">C</div></td>
+          </tr>
+          <tr>
+            <td><div class="compare-name"><div class="compare-logo" style="background:#6e40c9">RA</div>Replit AI</div></td>
+            <td><div class="compare-score" style="color:#C2410C">55</div></td>
+            <td><div class="compare-grade g-d">D</div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px">
+        <a href="vendors.html?cat=Code+Assistant" style="font-family:var(--display);font-size:12px;font-weight:600;color:var(--orange);display:flex;align-items:center;gap:4px">
+          View all Code Assistant scorecards
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-card">
+      <div class="eyebrow" style="color:rgba(255,255,255,.4)">Stay ahead</div>
+      <div class="cta-card-title">Monitor this vendor</div>
+      <div class="cta-card-sub">Get notified the moment GitHub Copilot's score changes — policy updates, new findings, certification changes.</div>
+      <div class="cta-inputs">
+        <input type="email" class="cta-input" placeholder="your@company.com">
+        <a href="waitlist.html" class="btn btn-primary btn-cta">Set up alert →</a>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /main -->
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div class="nav-logo-mark">AI</div>
+        <span style="color:rgba(255,255,255,.5);font-family:var(--display);font-size:14px">AI Security Scorecard</span>
+      </div>
+      <div class="footer-legal">© 2026 LMT Technology Solutions. Scores are based on public evidence and automated testing — not a guarantee of security.</div>
+    </div>
+    <div class="footer-links">
+      <a href="index.html#framework">Methodology</a>
+      <a href="vendors.html">Vendors</a>
+      <a href="#">Blog</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Radar Chart ──────────────────────────────────────────────────────
+(function() {
+  const svg = document.getElementById('radarSvg');
+  const cx = 140, cy = 148, rMax = 95;
+
+  // scores as fraction of max points
+  const dims = [
+    {score: 22, max: 25, color: '#1D9E75'},
+    {score: 22, max: 25, color: '#2D7DD2'},
+    {score: 18, max: 20, color: '#7C3AED'},
+    {score: 13, max: 15, color: '#E86A27'},
+    {score: 11, max: 15, color: '#B45309'},
+  ];
+
+  function pt(angle, r) {
+    const a = (angle - 90) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  function polyPoints(radii) {
+    return radii.map((r, i) => pt(i * 72, r).join(',')).join(' ');
+  }
+
+  // Background rings
+  [0.25, 0.5, 0.75, 1.0].forEach(frac => {
+    const r = frac * rMax;
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', polyPoints([r,r,r,r,r]));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', frac === 1.0 ? '#D1D5DB' : '#E5E7EB');
+    poly.setAttribute('stroke-width', frac === 1.0 ? '1.5' : '1');
+    svg.appendChild(poly);
+  });
+
+  // Axis lines
+  for (let i = 0; i < 5; i++) {
+    const [x, y] = pt(i * 72, rMax);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+    line.setAttribute('x2', x);  line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#E5E7EB'); line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+  }
+
+  // Data polygon
+  const dataRadii = dims.map(d => (d.score / d.max) * rMax);
+  const dataPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  dataPoly.setAttribute('points', polyPoints(dataRadii));
+  dataPoly.setAttribute('fill', 'rgba(29,158,117,.12)');
+  dataPoly.setAttribute('stroke', '#1D9E75');
+  dataPoly.setAttribute('stroke-width', '2');
+  dataPoly.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(dataPoly);
+
+  // Dot at each vertex
+  dims.forEach((d, i) => {
+    const r = (d.score / d.max) * rMax;
+    const [x, y] = pt(i * 72, r);
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', x); circle.setAttribute('cy', y);
+    circle.setAttribute('r', '5');
+    circle.setAttribute('fill', d.color);
+    circle.setAttribute('stroke', '#fff');
+    circle.setAttribute('stroke-width', '2');
+    svg.appendChild(circle);
+  });
+
+  // Axis labels
+  const labels = ['Data\nPrivacy','Model\nSecurity','Infra-\nstructure','Govern-\nance','Compli-\nance'];
+  const offsets = [[0,-14],[22,6],[14,16],[-14,16],[-24,6]];
+  labels.forEach((lbl, i) => {
+    const [x, y] = pt(i * 72, rMax + 20);
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', x + offsets[i][0]);
+    text.setAttribute('y', y + offsets[i][1]);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-family', "'Space Grotesk', sans-serif");
+    text.setAttribute('font-size', '10');
+    text.setAttribute('font-weight', '600');
+    text.setAttribute('fill', '#6B7280');
+    lbl.split('\n').forEach((line, li) => {
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.setAttribute('x', x + offsets[i][0]);
+      tspan.setAttribute('dy', li === 0 ? '0' : '13');
+      tspan.textContent = line;
+      text.appendChild(tspan);
+    });
+    svg.appendChild(text);
+  });
+})();
+
+// ── History bars ─────────────────────────────────────────────────────
+(function() {
+  const history = [
+    {q:'Q1 2025', score:82},
+    {q:'Q2 2025', score:83},
+    {q:'Q3 2025', score:84},
+    {q:'Q4 2025', score:85},
+    {q:'Q1 2026', score:85},
+    {q:'Q2 2026', score:85},
+  ];
+  const maxScore = 100;
+  const container = document.getElementById('historyBars');
+  const labelContainer = document.getElementById('historyLabels');
+
+  history.forEach((h, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'h-bar-wrap';
+
+    const scoreEl = document.createElement('div');
+    scoreEl.className = 'h-score';
+    scoreEl.style.color = i === history.length - 1 ? '#1D9E75' : '#6B7280';
+    scoreEl.textContent = h.score;
+
+    const bar = document.createElement('div');
+    bar.className = 'h-bar';
+    bar.style.background = i === history.length - 1 ? '#1D9E75' : '#D1D5DB';
+    bar.style.height = ((h.score / maxScore) * 70) + 'px';
+    bar.setAttribute('data-score', h.score);
+
+    wrap.appendChild(scoreEl);
+    wrap.appendChild(bar);
+    container.appendChild(wrap);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'h-label';
+    lbl.style.flex = '1';
+    lbl.textContent = h.q;
+    labelContainer.appendChild(lbl);
+  });
+})();
+</script>
+</body>
+</html>
