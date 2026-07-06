@@ -168,8 +168,8 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
     <div class="nav-links">
       <a href="index.html#how-it-works">How it works</a>
       <a href="methodology.html">Methodology</a>
-      <a href="index.html#pricing">Pricing</a>
       <a href="vendors.html" class="active">Vendors</a>
+      <a href="about.html">About</a>
     </div>
     <a href="login.html" class="btn btn-ghost" id="navAuthBtn" style="font-size:13px;padding:10px 20px">Sign in</a>
     <a href="waitlist.html" class="btn btn-primary nav-cta" style="font-size:13px;padding:10px 20px">Get early access</a>
@@ -257,14 +257,15 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
         <div class="nav-logo-mark">AI</div>
         <span style="color:rgba(255,255,255,.5);font-size:14px">AI Security Scorecard</span>
       </div>
-      <div class="footer-legal">© 2026 LMT Technology Solutions. All rights reserved.</div>
+      <div class="footer-legal">© 2026 Chain Cyber LLC. All rights reserved.</div>
     </div>
     <div class="footer-links">
-      <a href="index.html#framework">Methodology</a>
+      <a href="about.html">About</a>
+      <a href="methodology.html">Methodology</a>
       <a href="vendors.html">Vendors</a>
       <a href="#">Blog</a>
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
       <a href="mailto:hello@aisecurityscorecard.com">Contact</a>
     </div>
   </div>
@@ -276,9 +277,9 @@ const vendors = [
   // LLM / Chatbot
   {id:"anthropic-claude",  name:"Anthropic Claude",       initials:"AC", cat:"LLM / Chatbot",       score:91, grade:"A", risk:"low",    updated:"2h ago",  detail:"scorecard-claude.html",
    dims:[24,24,18,13,12], flag:"Minor docs gap in system prompt disclosure"},
-  {id:"openai-gpt4o",      name:"OpenAI GPT-4o",          initials:"OA", cat:"LLM / Chatbot",       score:87, grade:"B", risk:"low",    updated:"4h ago",  detail:null,
+  {id:"openai-gpt4o",      name:"OpenAI GPT-4o",          initials:"OA", cat:"LLM / Chatbot",       score:87, grade:"B", risk:"low",    updated:"4h ago",  detail:"scorecard-gpt4o.html",
    dims:[22,22,18,13,12], flag:"Training opt-out requires manual request"},
-  {id:"google-gemini",     name:"Google Gemini",           initials:"GG", cat:"LLM / Chatbot",       score:82, grade:"B", risk:"medium", updated:"6h ago",  detail:null,
+  {id:"google-gemini",     name:"Google Gemini",           initials:"GG", cat:"LLM / Chatbot",       score:82, grade:"B", risk:"medium", updated:"6h ago",  detail:"scorecard-gemini.html",
    dims:[20,22,17,12,11], flag:"Data retention unclear for Workspace users"},
   {id:"cohere-command",    name:"Cohere Command",          initials:"CO", cat:"LLM / Chatbot",       score:79, grade:"B", risk:"low",    updated:"1d ago",  detail:null,
    dims:[21,20,16,12,10], flag:"Limited public red-team disclosures"},
@@ -334,7 +335,7 @@ const vendors = [
    dims:[12,14,11, 8, 7], flag:"DPA recently updated after audit finding"},
 
   // Agent / Workflow
-  {id:"salesforce-ein",    name:"Salesforce Einstein",     initials:"SE", cat:"Agent / Workflow",    score:77, grade:"B", risk:"medium", updated:"2d ago",  detail:null,
+  {id:"salesforce-ein",    name:"Salesforce Einstein",     initials:"SE", cat:"Agent / Workflow",    score:77, grade:"B", risk:"medium", updated:"3h ago",  detail:"scorecard-einstein.html",
    dims:[20,20,16,12, 9], flag:"Agent action scope not fully documented"},
   {id:"zapier-ai",         name:"Zapier AI",               initials:"ZA", cat:"Agent / Workflow",    score:64, grade:"C", risk:"medium", updated:"1d ago",  detail:null,
    dims:[16,17,14,10, 7], flag:"Third-party tool access permissions broad"},
