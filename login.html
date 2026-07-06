@@ -187,9 +187,9 @@ body{font-family:var(--body);color:var(--slate);-webkit-font-smoothing:antialias
     </div>
 
     <div class="lp-social">
-      <div class="social-item"><span class="social-icon">🔒</span>SOC 2 Type II</div>
       <div class="social-item"><span class="social-icon">🔐</span>SSO supported</div>
       <div class="social-item"><span class="social-icon">🇪🇺</span>GDPR compliant</div>
+      <div class="social-item"><span class="social-icon">🛡️</span>Data never sold</div>
     </div>
   </div>
 </div>
@@ -264,89 +264,156 @@ body{font-family:var(--body);color:var(--slate);-webkit-font-smoothing:antialias
 </div>
 
 <script>
-// ── Auth config ──────────────────────────────────────────────────────
-const VALID_CREDENTIALS = [
+// ── Hardcoded demo credentials (always work regardless of allow list) ─
+const DEMO_CREDENTIALS = [
   {email:'demo@enterprise.com', password:'AIsec2026', name:'Alex Rivera', company:'Meridian Corp', role:'CISO'},
   {email:'admin@company.com',   password:'admin123',  name:'Sam Chen',    company:'Acme Inc',    role:'Security Lead'},
 ];
 
-// Redirect if already logged in
+// ── Data helpers ──────────────────────────────────────────────────────
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function loadAllowed()   { try { return JSON.parse(localStorage.getItem('aisc_allowed')   || '[]'); } catch(e) { return []; } }
+function loadDenied()    { try { return JSON.parse(localStorage.getItem('aisc_denied')    || '[]'); } catch(e) { return []; } }
+function loadPasswords() { try { return JSON.parse(localStorage.getItem('aisc_passwords') || '{}'); } catch(e) { return {}; } }
+function loadSheetRows() { try { return JSON.parse(localStorage.getItem('aisc_sheet_rows')|| '[]'); } catch(e) { return []; } }
+
+// ── Redirect if already logged in ────────────────────────────────────
 try {
   const session = JSON.parse(localStorage.getItem('aisc_session'));
   if (session && session.email) window.location.href = 'dashboard.html';
 } catch(e){}
 
-// ── Password toggle ──────────────────────────────────────────────────
-const pwInput = document.getElementById('password');
+// ── Password toggle ───────────────────────────────────────────────────
+const pwInput  = document.getElementById('password');
 const pwToggle = document.getElementById('pwToggle');
-const eyeOpen = document.getElementById('eyeOpen');
+const eyeOpen   = document.getElementById('eyeOpen');
 const eyeClosed = document.getElementById('eyeClosed');
-
 pwToggle.addEventListener('click', () => {
   const visible = pwInput.type === 'text';
   pwInput.type = visible ? 'password' : 'text';
-  eyeOpen.style.display = visible ? 'block' : 'none';
-  eyeClosed.style.display = visible ? 'none' : 'block';
+  eyeOpen.style.display   = visible ? 'block' : 'none';
+  eyeClosed.style.display = visible ? 'none'  : 'block';
 });
 
-// ── Fill demo ────────────────────────────────────────────────────────
+// ── Fill demo ─────────────────────────────────────────────────────────
 document.getElementById('fillDemo').addEventListener('click', () => {
-  document.getElementById('email').value = 'demo@enterprise.com';
+  document.getElementById('email').value    = 'demo@enterprise.com';
   document.getElementById('password').value = 'AIsec2026';
   document.getElementById('email').dispatchEvent(new Event('input'));
 });
 
-// ── Sign in ──────────────────────────────────────────────────────────
-function signIn() {
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const password = document.getElementById('password').value;
-  const remember = document.getElementById('remember').checked;
-  const errorMsg = document.getElementById('errorMsg');
-  const btn = document.getElementById('submitBtn');
-  const btnText = document.getElementById('btnText');
-
-  // Clear errors
-  errorMsg.classList.remove('show');
+// ── Error message helpers ─────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearErrors() {
+  document.getElementById('errorMsg').classList.remove('show');
   document.getElementById('email').classList.remove('error');
   document.getElementById('password').classList.remove('error');
+}
 
-  // Validate
+// ── Sign in ───────────────────────────────────────────────────────────
+async function signIn() {
+  const email    = document.getElementById('email').value.trim().toLowerCase();
+  const password = document.getElementById('password').value;
+  const remember = document.getElementById('remember').checked;
+  const btn      = document.getElementById('submitBtn');
+  const btnText  = document.getElementById('btnText');
+
+  clearErrors();
+
   if (!email || !password) {
-    if (!email) document.getElementById('email').classList.add('error');
+    if (!email)    document.getElementById('email').classList.add('error');
     if (!password) document.getElementById('password').classList.add('error');
     return;
   }
 
-  // Loading state
   btn.classList.add('loading');
   btnText.textContent = 'Signing in…';
 
-  setTimeout(() => {
-    const user = VALID_CREDENTIALS.find(u => u.email === email && u.password === password);
+  // Small delay for UX
+  await new Promise(r => setTimeout(r, 700));
 
-    if (user) {
-      const session = {
-        email: user.email,
-        name: user.name,
-        company: user.company,
-        role: user.role,
-        loginTime: Date.now(),
-        remember,
-      };
-      try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e){}
+  // ── Step 1: Check deny list ───────────────────────────────────────
+  const denied = loadDenied();
+  if (denied.some(d => d.email === email)) {
+    btn.classList.remove('loading');
+    btnText.textContent = 'Sign in to dashboard';
+    document.getElementById('email').classList.add('error');
+    showError('Your application was not approved. Contact hello@aisecurityscorecard.com if you believe this is an error.');
+    return;
+  }
+
+  // ── Step 2: Try demo / hardcoded credentials ──────────────────────
+  const demoUser = DEMO_CREDENTIALS.find(u => u.email === email && u.password === password);
+  if (demoUser) {
+    const session = { email: demoUser.email, name: demoUser.name, company: demoUser.company, role: demoUser.role, loginTime: Date.now(), remember };
+    try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e) {}
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // ── Step 3: Check allow list + hashed password ────────────────────
+  const allowed = loadAllowed();
+  const isAllowed = allowed.some(a => a.email === email);
+
+  if (isAllowed) {
+    const passwords = loadPasswords();
+    const pwEntry   = passwords[email];
+    if (!pwEntry) {
+      // Approved but no password set yet
+      btn.classList.remove('loading');
+      btnText.textContent = 'Sign in to dashboard';
+      showError('Your account is approved but no password has been set. Contact your administrator.');
+      return;
+    }
+    const inputHash = await sha256(password);
+    if (inputHash === pwEntry.hash) {
+      // Look up user details from sheet rows
+      const rows   = loadSheetRows();
+      const row    = rows.find(r => r.email === email) || {};
+      const name   = [(row.first || ''), (row.last || '')].filter(Boolean).join(' ') || email;
+      const session = { email, name, company: row.company || '', role: row.title || 'User', loginTime: Date.now(), remember };
+      try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e) {}
       window.location.href = 'dashboard.html';
+      return;
     } else {
       btn.classList.remove('loading');
       btnText.textContent = 'Sign in to dashboard';
-      errorMsg.classList.add('show');
       document.getElementById('password').classList.add('error');
       document.getElementById('password').value = '';
+      showError('Incorrect password. Try again or contact your administrator.');
+      return;
     }
-  }, 900);
+  }
+
+  // ── Step 4: Email not on any list — check if application pending ──
+  btn.classList.remove('loading');
+  btnText.textContent = 'Sign in to dashboard';
+  document.getElementById('email').classList.add('error');
+  const rows = loadSheetRows();
+  const hasPending = rows.some(r => r.email === email);
+  showError(hasPending
+    ? 'Your application is pending review. You\'ll receive access once approved.'
+    : 'No account found. Join the waitlist to request access.');
 }
 
 document.getElementById('submitBtn').addEventListener('click', signIn);
 document.addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
 </script>
+<footer style="background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:24px;text-align:center">
+  <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+    <a href="index.html" style="font-size:12px;color:rgba(255,255,255,.3);text-decoration:none">Home</a>
+    <a href="about.html" style="font-size:12px;color:rgba(255,255,255,.3);text-decoration:none">About</a>
+    <a href="privacy.html" style="font-size:12px;color:rgba(255,255,255,.3);text-decoration:none">Privacy</a>
+    <a href="terms.html" style="font-size:12px;color:rgba(255,255,255,.3);text-decoration:none">Terms</a>
+  </div>
+  <div style="font-size:11px;color:rgba(255,255,255,.15);margin-top:10px">© 2026 Chain Cyber LLC</div>
+</footer>
 </body>
 </html>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Management — AI Security Scorecard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E;--navy-mid:#1A2D5C;
+  --orange:#E86A27;--orange-lt:#FDF0E8;--orange-dim:#C05818;
+  --green:#1D9E75;--green-lt:#E6F7F2;
+  --red:#E24B4A;--red-lt:#FCEBEB;
+  --amber:#FAC775;--amber-lt:#FEF9EE;
+  --blue:#2D7DD2;--blue-lt:#EBF4FF;
+  --slate:#374151;--slate-lt:#6B7280;
+  --border:#E5E7EB;--bg:#F3F4F6;--white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --sidebar:220px;--header:58px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-font-smoothing:antialiased}
+/* ── Login ── */
+.login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(232,106,39,.08),transparent);pointer-events:none}
+.login-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px 44px;width:100%;max-width:380px;position:relative;z-index:1}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-mark{width:34px;height:34px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:15px;color:#fff}
+.login-product{font-family:var(--display);font-size:14px;font-weight:700;color:#fff;line-height:1.3}
+.login-product span{display:block;font-size:10px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.login-title{font-family:var(--display);font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:24px}
+.login-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px}
+.login-input{width:100%;font-family:var(--mono);font-size:14px;color:#fff;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:11px 14px;outline:none;transition:border-color .15s;margin-bottom:14px}
+.login-input:focus{border-color:var(--orange)}
+.login-input.shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.login-btn{width:100%;font-family:var(--display);font-size:14px;font-weight:700;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:13px;cursor:pointer;transition:all .18s}
+.login-btn:hover{background:var(--orange-dim)}
+.login-error{font-size:12px;color:var(--red);text-align:center;margin-top:10px;display:none}
+.login-error.show{display:block}
+/* ── Shell ── */
+.shell{display:none;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:var(--header) 1fr;height:100vh}
+.shell.visible{display:grid}
+/* ── Sidebar ── */
+.sidebar{grid-row:1/3;background:var(--navy);display:flex;flex-direction:column}
+.sb-top{height:var(--header);display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-mark{width:28px;height:28px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+.sb-name{font-family:var(--display);font-size:13px;font-weight:700;color:#fff}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.05em;text-transform:uppercase}
+.sb-nav{flex:1;padding:14px 8px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.sb-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:8px 8px 5px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 8px;border-radius:7px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--orange);border-radius:0 2px 2px 0}
+.nb{margin-left:auto;font-family:var(--display);font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px}
+.nb-red{background:var(--red);color:#fff}
+.nb-green{background:rgba(29,158,117,.25);color:#4ECBA3}
+.nb-gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.4)}
+.sb-footer{padding:12px 8px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-user{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;transition:background .15s}
+.sb-user:hover{background:rgba(255,255,255,.06)}
+.user-av{width:28px;height:28px;border-radius:6px;background:var(--orange-dim);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-nm{font-family:var(--display);font-size:12px;font-weight:600;color:rgba(255,255,255,.75)}
+.user-rl{font-size:10px;color:rgba(255,255,255,.3)}
+/* ── Topbar ── */
+.topbar{grid-column:2;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;z-index:10}
+.tb-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy)}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;transition:border-color .15s}
+.search-wrap:focus-within{border-color:var(--orange)}
+.search-wrap input{font-family:var(--body);font-size:13px;color:var(--navy);background:transparent;border:none;outline:none;width:200px}
+.search-wrap input::placeholder{color:var(--slate-lt)}
+.tb-btn{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:12px;font-weight:600;color:var(--slate);background:var(--white);border:1.5px solid var(--border);border-radius:7px;padding:7px 14px;cursor:pointer;transition:all .15s}
+.tb-btn:hover{border-color:var(--navy);color:var(--navy)}
+.tb-btn.primary{background:var(--orange);color:#fff;border-color:var(--orange)}
+.tb-btn.primary:hover{background:var(--orange-dim)}
+/* ── Main ── */
+.main{grid-column:2;overflow-y:auto;padding:24px 28px 60px}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* ── Connect panel ── */
+.connect-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:20px}
+.cp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cp-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.conn-pill{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px}
+.cp-ok{background:var(--green-lt);color:var(--green)}
+.cp-err{background:var(--red-lt);color:var(--red)}
+.cp-idle{background:var(--bg);color:var(--slate-lt);border:1px solid var(--border)}
+.conn-dot{width:6px;height:6px;border-radius:50%}
+.cp-ok .conn-dot{background:var(--green);animation:pulse 2s infinite}
+.cp-err .conn-dot{background:var(--red)}
+.cp-idle .conn-dot{background:var(--slate-lt)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.cp-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:16px}
+.field-lbl{font-size:11px;font-weight:700;color:var(--slate-lt);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:block}
+.url-input{width:100%;font-family:var(--mono);font-size:13px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;outline:none;transition:border-color .15s}
+.url-input:focus{border-color:var(--orange);background:#fff}
+.fetch-btn{font-family:var(--display);font-size:13px;font-weight:700;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:11px 20px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:background .15s}
+.fetch-btn:hover{background:var(--orange-dim)}
+.fetch-btn:disabled{opacity:.5;cursor:not-allowed}
+/* ── Setup steps ── */
+.setup-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.setup-box-title{font-family:var(--display);font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.step-list{display:flex;flex-direction:column;gap:10px}
+.step-item{display:flex;gap:12px;font-size:12px;color:var(--slate-lt);line-height:1.55;align-items:flex-start}
+.snum{width:20px;height:20px;border-radius:50%;background:var(--orange);color:#fff;font-family:var(--display);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-item strong{color:var(--slate)}
+.chip{font-family:var(--mono);font-size:11px;background:var(--navy);color:#E5E7EB;padding:2px 6px;border-radius:4px;display:inline}
+.code-block{background:var(--navy);border-radius:8px;padding:14px 16px;margin-top:10px;font-family:var(--mono);font-size:11px;color:#E5E7EB;line-height:1.75;overflow-x:auto;position:relative;white-space:pre}
+.code-block .kw{color:#E86A27}.code-block .str{color:#4ECBA3}.code-block .cm{color:#6B7280;font-style:italic}
+.copy-btn{position:absolute;top:8px;right:8px;font-family:var(--display);font-size:10px;font-weight:700;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);border:none;border-radius:4px;padding:3px 8px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.s-amber::after{background:var(--amber)}.s-green::after{background:var(--green)}.s-red::after{background:var(--red)}.s-blue::after{background:var(--blue)}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--slate-lt);letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
+.stat-val{font-family:var(--display);font-size:26px;font-weight:700;color:var(--navy);line-height:1}
+/* ── Panel ── */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
+.panel-title{font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.pbadge{font-family:var(--display);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.pb-gray{background:var(--bg);color:var(--slate-lt);border:1px solid var(--border)}
+.pb-amber{background:var(--amber-lt);color:#92400E}
+.pb-green{background:var(--green-lt);color:var(--green)}
+.pb-red{background:var(--red-lt);color:var(--red)}
+.panel-actions{display:flex;gap:8px;align-items:center}
+.bulk-lbl{font-size:12px;color:var(--slate-lt)}
+/* ── Table ── */
+.acc-table{width:100%;border-collapse:collapse;font-size:13px}
+.acc-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-lt);padding:0 14px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.acc-table th:hover{color:var(--navy)}
+.acc-table td{padding:0;border-bottom:1px solid var(--border);vertical-align:middle}
+.acc-table tr:last-child td{border-bottom:none}
+.acc-table tr.row-sel td{background:rgba(45,125,210,.03)}
+.ri{display:flex;align-items:center;padding:11px 14px}
+.cb{width:15px;height:15px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;margin-right:12px}
+.person{display:flex;align-items:center;gap:10px}
+.av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pname{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.pemail{font-size:11px;color:var(--slate-lt);font-family:var(--mono);margin-top:1px}
+.sbadge{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.sd{width:5px;height:5px;border-radius:50%}
+.s-pend{background:var(--amber-lt);color:#92400E}.s-pend .sd{background:var(--amber);animation:pulse 2s infinite}
+.s-appr{background:var(--green-lt);color:var(--green)}.s-appr .sd{background:var(--green)}
+.s-deny{background:var(--red-lt);color:var(--red)}.s-deny .sd{background:var(--red)}
+.plbadge{font-family:var(--display);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.pl-ent{background:var(--navy);color:#fff}.pl-pro{background:var(--blue-lt);color:var(--blue)}.pl-free{background:var(--bg);color:var(--slate-lt);border:1px solid var(--border)}
+.row-acts{display:flex;gap:5px;opacity:0;transition:opacity .15s}
+.acc-table tr:hover .row-acts{opacity:1}
+.acc-table tr.row-sel .row-acts{opacity:1}
+.abt{font-family:var(--display);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.abt-a{background:var(--green-lt);color:var(--green)}.abt-a:hover{background:var(--green);color:#fff}
+.abt-d{background:var(--red-lt);color:var(--red)}.abt-d:hover{background:var(--red);color:#fff}
+.abt-v{background:var(--bg);color:var(--slate);border:1px solid var(--border)}.abt-v:hover{border-color:var(--navy);color:var(--navy)}
+.abt-u{background:var(--bg);color:var(--slate-lt);border:1px solid var(--border)}.abt-u:hover{border-color:var(--orange);color:var(--orange)}
+/* ── Empty / Loading ── */
+.empty{padding:60px 24px;text-align:center}
+.empty-ico{font-size:36px;margin-bottom:14px;opacity:.3}
+.empty-ttl{font-family:var(--display);font-size:17px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--slate-lt)}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── Allow/deny list panels ── */
+.lists-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.list-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.lph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.lph-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px}
+.list-items{padding:8px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.list-empty{padding:20px;text-align:center;font-size:12px;color:var(--slate-lt)}
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;transition:background .15s}
+.list-item:hover{background:var(--bg)}
+.li-email{font-family:var(--mono);font-size:12px;color:var(--slate)}
+.li-name{font-size:11px;color:var(--slate-lt);margin-top:1px}
+.li-remove{background:none;border:none;cursor:pointer;color:var(--slate-lt);font-size:12px;padding:2px 6px;border-radius:4px;transition:all .15s}
+.li-remove:hover{background:var(--red-lt);color:var(--red)}
+.list-footer{padding:10px;border-top:1px solid var(--border);display:flex;gap:7px}
+.li-input{flex:1;font-family:var(--mono);font-size:12px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;outline:none;transition:border-color .15s}
+.li-input:focus{border-color:var(--orange)}
+.li-add{font-family:var(--display);font-size:11px;font-weight:700;color:#fff;border:none;border-radius:6px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.li-allow{background:var(--green)}.li-allow:hover{background:#17835f}
+.li-deny{background:var(--red)}.li-deny:hover{background:#c43a39}
+/* ── Drawer ── */
+.overlay{position:fixed;inset:0;background:rgba(13,27,62,.3);z-index:200;display:none;backdrop-filter:blur(2px)}
+.overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-520px;width:520px;height:100%;background:#fff;box-shadow:-8px 0 40px rgba(13,27,62,.15);z-index:201;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer.open{right:0}
+.dr-head{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;background:#fff;z-index:1}
+.dr-person{display:flex;align-items:center;gap:12px}
+.dr-av{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.dr-name{font-family:var(--display);font-size:17px;font-weight:700;color:var(--navy)}
+.dr-email{font-size:12px;color:var(--slate-lt);font-family:var(--mono);margin-top:2px}
+.dr-close{background:none;border:none;cursor:pointer;color:var(--slate-lt);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.dr-close:hover{background:var(--bg);color:var(--navy)}
+.dr-body{flex:1;padding:22px 24px;overflow-y:auto}
+.dr-section{margin-bottom:20px}
+.dr-sec-title{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-lt);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.di{display:flex;flex-direction:column;gap:3px}
+.di-lbl{font-size:11px;font-weight:600;color:var(--slate-lt);text-transform:uppercase;letter-spacing:.04em}
+.di-val{font-size:13px;color:var(--navy);font-weight:500}
+.di-val.mono{font-family:var(--mono);font-size:12px;color:var(--slate)}
+.concern-tag{font-size:11px;font-weight:600;background:var(--orange-lt);color:var(--orange-dim);padding:3px 9px;border-radius:5px;display:inline-block;margin:2px}
+.pw-row{display:flex;gap:7px;margin-top:8px}
+.pw-inp{flex:1;font-family:var(--mono);font-size:13px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;outline:none;transition:border-color .15s}
+.pw-inp:focus{border-color:var(--orange);background:#fff}
+.pw-gen{font-family:var(--display);font-size:11px;font-weight:600;background:var(--bg);color:var(--slate);border:1.5px solid var(--border);border-radius:7px;padding:9px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.pw-gen:hover{border-color:var(--orange);color:var(--orange)}
+.pw-set{font-family:var(--display);font-size:11px;font-weight:700;background:var(--green);color:#fff;border:none;border-radius:7px;padding:9px 12px;cursor:pointer;white-space:nowrap}
+.pw-note{font-size:11px;color:var(--slate-lt);margin-top:6px;line-height:1.55}
+.note-area{width:100%;font-family:var(--body);font-size:13px;color:var(--navy);background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;resize:vertical;min-height:64px;outline:none;line-height:1.6;transition:border-color .15s}
+.note-area:focus{border-color:var(--orange);background:#fff}
+.save-note{margin-top:7px;font-family:var(--display);font-size:12px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:7px 14px;cursor:pointer;color:var(--slate);transition:all .15s}
+.save-note:hover{border-color:var(--navy);color:var(--navy)}
+.dr-foot{padding:16px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:10px;background:#fff;position:sticky;bottom:0}
+.dr-btn{flex:1;font-family:var(--display);font-size:14px;font-weight:700;padding:12px;border-radius:9px;border:none;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px}
+.db-a{background:var(--green);color:#fff}.db-a:hover{background:#17835f}
+.db-d{background:var(--red-lt);color:var(--red);border:1.5px solid rgba(226,75,74,.2)}.db-d:hover{background:var(--red);color:#fff}
+.db-u{background:var(--bg);color:var(--slate);border:1.5px solid var(--border);flex:0;padding:12px 16px}.db-u:hover{border-color:var(--orange);color:var(--orange)}
+.decided-strip{flex:1;text-align:center;padding:12px;border-radius:8px;font-family:var(--display);font-size:13px;font-weight:600}
+.ds-a{background:var(--green-lt);color:var(--green)}.ds-d{background:var(--red-lt);color:var(--red)}
+/* ── Confirm ── */
+.conf-overlay{position:fixed;inset:0;background:rgba(13,27,62,.4);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.conf-overlay.open{display:flex}
+.conf-box{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:400px;margin:24px;box-shadow:0 24px 64px rgba(13,27,62,.25)}
+.conf-icon{width:48px;height:48px;border-radius:12px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.ci-a{background:var(--green-lt)}.ci-d{background:var(--red-lt)}
+.conf-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:5px}
+.conf-sub{font-size:13px;color:var(--slate-lt);text-align:center;margin-bottom:14px;line-height:1.6}
+.pw-section{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.pw-section-title{font-family:var(--display);font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.cpw-row{display:flex;gap:7px;margin-bottom:6px}
+.cpw-inp{flex:1;font-family:var(--mono);font-size:13px;color:var(--navy);background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;outline:none;transition:border-color .15s}
+.cpw-inp:focus{border-color:var(--green)}
+.cpw-gen{font-family:var(--display);font-size:11px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;padding:10px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.cpw-gen:hover{border-color:var(--orange)}
+.cpw-note{font-size:11px;color:var(--slate-lt);line-height:1.5}
+.conf-acts{display:flex;gap:10px}
+.conf-cancel{flex:1;font-family:var(--display);font-size:13px;font-weight:600;background:#fff;color:var(--slate);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s}
+.conf-cancel:hover{border-color:var(--navy);color:var(--navy)}
+.conf-ok{flex:1;font-family:var(--display);font-size:13px;font-weight:700;color:#fff;border:none;border-radius:8px;padding:11px;cursor:pointer;transition:all .15s}
+.co-a{background:var(--green)}.co-a:hover{background:#17835f}
+.co-d{background:var(--red)}.co-d:hover{background:#c43a39}
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;font-family:var(--display);font-size:13px;font-weight:600;padding:12px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(13,27,62,.3);display:flex;align-items:center;gap:8px;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);z-index:500}
+.toast.show{transform:translateY(0);opacity:1}
+@media(max-width:900px){.lists-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){:root{--sidebar:0px}.sidebar{display:none}.drawer{width:100%;right:-100%}}
+@media(prefers-reduced-motion:reduce){.drawer,.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">AI</div>
+      <div class="login-product">AI Security Scorecard<span>Account Management</span></div>
+    </div>
+    <h1 class="login-title">Admin sign in</h1>
+    <p class="login-sub">Restricted to authorised administrators.</p>
+    <label class="login-label" for="adminPass">Admin password</label>
+    <input class="login-input" type="password" id="adminPass" placeholder="Enter admin password" autocomplete="current-password">
+    <button class="login-btn" id="loginBtn">Sign in</button>
+    <div class="login-error" id="loginError">Incorrect password.</div>
+    <a href="admin.html" style="display:flex;justify-content:center;align-items:center;gap:5px;margin-top:18px;font-size:12px;color:rgba(255,255,255,.3);text-decoration:none">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2L3 6l4 4"/></svg>
+      Back to application review
+    </a>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="shell" id="shell">
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="sb-mark">AI</div>
+      <div><div class="sb-name">Admin Console</div><div class="sb-sub">AI Security Scorecard</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-lbl">Account Management</div>
+      <a href="accounts.html" class="nav-item active">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5.5" cy="4.5" r="2.5"/><path d="M1 13c0-2.5 2-4.5 4.5-4.5S10 10.5 10 13"/><path d="M11 7l1.5 1.5L15 6"/></svg>
+        Accounts <span class="nb nb-amber" id="pendingBadge">0</span>
+      </a>
+      <div class="sb-lbl">Access Lists</div>
+      <a href="#lists" class="nav-item" onclick="scrollToLists();return false">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 7.5l3.5 3.5 7.5-7"/></svg>
+        Allow list <span class="nb nb-green" id="allowBadgeSb">0</span>
+      </a>
+      <a href="#lists" class="nav-item" onclick="scrollToLists();return false">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l9 9M12 3L3 12"/></svg>
+        Deny list <span class="nb nb-red" id="denyBadgeSb">0</span>
+      </a>
+      <div class="sb-lbl">Navigation</div>
+      <a href="admin.html" class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="8.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="8.5" width="5" height="5" rx="1"/><rect x="8.5" y="8.5" width="5" height="5" rx="1"/></svg>
+        Application review
+      </a>
+      <a href="dashboard.html" class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 13l4-4 3 3 5-6"/></svg>
+        User dashboard
+      </a>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user" id="signOutBtn">
+        <div class="user-av">AD</div>
+        <div><div class="user-nm">Administrator</div><div class="user-rl">Click to sign out</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <div class="tb-title">Account Management</div>
+    <div class="tb-right">
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
+        <input type="text" placeholder="Search name, email, company…" id="searchInput">
+      </div>
+      <select id="statusFilter" style="font-family:var(--body);font-size:13px;color:var(--slate);background:#fff;border:1.5px solid var(--border);border-radius:7px;padding:7px 28px 7px 10px;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' d='M2 4l4 4 4-4'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 8px center">
+        <option value="all">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="denied">Denied</option>
+      </select>
+      <button class="tb-btn" id="exportBtn">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 1v7M3 5l3 3 3-3"/><path d="M1 10h10"/></svg>
+        Export CSV
+      </button>
+      <button class="tb-btn primary" id="syncBtn">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10.5 6A4.5 4.5 0 112.5 3.5M1.5 1v3h3"/></svg>
+        Sync sheet
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Connect panel -->
+    <div class="connect-panel">
+      <div class="cp-head">
+        <div class="cp-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg>
+          Google Sheets connection
+        </div>
+        <div class="conn-pill cp-idle" id="connPill">
+          <div class="conn-dot"></div><span id="connLbl">Not connected</span>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div>
+          <label class="field-lbl">Apps Script Web App URL</label>
+          <input class="url-input" type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
+        </div>
+        <button class="fetch-btn" id="fetchBtn">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 6.5A4.5 4.5 0 112.5 4M1 1.5v3h3"/></svg>
+          Fetch responses
+        </button>
+      </div>
+      <div class="setup-box">
+        <div class="setup-box-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3M7 9.5h0"/></svg>
+          One-time setup — deploy an Apps Script to connect your spreadsheet
+        </div>
+        <div class="step-list">
+          <div class="step-item"><div class="snum">1</div><div>Open your <a href="https://docs.google.com/spreadsheets/d/1XvyGa-WhXKC_Hm6yOX_jqS50-bJK8YznOjmK5BlqMMw/edit" target="_blank" style="color:var(--orange)">Google Sheet</a> → <strong>Extensions → Apps Script</strong></div></div>
+          <div class="step-item"><div class="snum">2</div><div>Delete any existing code and paste the script below, then click <strong>Save</strong>
+            <div class="code-block"><button class="copy-btn" onclick="copyScript()">Copy</button><span class="cm">// AI Security Scorecard — Sheet relay</span>
+<span class="kw">function</span> doGet(e) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[<span class="str">0</span>];
+    <span class="kw">const</span> data  = sheet.getDataRange().getValues();
+    <span class="kw">if</span> (data.length &lt; <span class="str">2</span>) <span class="kw">return</span> ok({ rows: [], headers: [] });
+    <span class="kw">const</span> headers = data[<span class="str">0</span>];
+    <span class="kw">const</span> rows = data.slice(<span class="str">1</span>).map((row, i) =&gt; {
+      <span class="kw">const</span> obj = { _row: i + <span class="str">2</span> };
+      headers.forEach((h, j) =&gt; {
+        obj[h] = row[j] <span class="kw">instanceof</span> Date ? row[j].toISOString() : row[j];
+      });
+      <span class="kw">return</span> obj;
+    });
+    <span class="kw">return</span> ok({ headers, rows });
+  } <span class="kw">catch</span>(err) { <span class="kw">return</span> ok({ error: err.message }); }
+}
+<span class="kw">function</span> ok(d) {
+  <span class="kw">return</span> ContentService.createTextOutput(JSON.stringify(d))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+          </div></div>
+          <div class="step-item"><div class="snum">3</div><div>Click <strong>Deploy → New deployment</strong> → type: <span class="chip">Web app</span> → Execute as: <span class="chip">Me</span> → Access: <span class="chip">Anyone</span> → <strong>Deploy</strong></div></div>
+          <div class="step-item"><div class="snum">4</div><div>Copy the <strong>Web app URL</strong> and paste it in the field above, then click <strong>Fetch responses</strong></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat s-amber"><div class="stat-lbl">Pending review</div><div class="stat-val" id="statPending">0</div></div>
+      <div class="stat s-green"><div class="stat-lbl">Approved</div><div class="stat-val" id="statApproved">0</div></div>
+      <div class="stat s-red"><div class="stat-lbl">Denied</div><div class="stat-val" id="statDenied">0</div></div>
+      <div class="stat s-blue"><div class="stat-lbl">Total responses</div><div class="stat-val" id="statTotal">0</div></div>
+    </div>
+
+    <!-- Accounts table -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Form Responses <span class="pbadge pb-gray" id="rowCount">0 rows</span></div>
+        <div class="panel-actions" id="bulkBar" style="display:none">
+          <span class="bulk-lbl" id="bulkLbl">0 selected</span>
+          <button class="tb-btn" style="color:var(--green);border-color:rgba(29,158,117,.3)" onclick="bulkAction('approved')">✓ Approve selected</button>
+          <button class="tb-btn" style="color:var(--red);border-color:rgba(226,75,74,.3)" onclick="bulkAction('denied')">✗ Deny selected</button>
+        </div>
+        <button class="tb-btn" onclick="clearData()" style="color:var(--red)">Clear local data</button>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+
+    <!-- Allow / Deny lists -->
+    <div id="lists" style="scroll-margin-top:80px">
+      <div class="lists-grid">
+        <div class="list-panel">
+          <div class="lph">
+            <div class="lph-title"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1.5 6.5l2.5 2.5 6.5-6"/></svg>Allow list <span class="pbadge pb-green" id="allowCount">0</span></div>
+            <button class="tb-btn" onclick="exportList('allowed')" style="font-size:11px;padding:5px 10px">Export</button>
+          </div>
+          <div class="list-items" id="allowItems"></div>
+          <div class="list-footer">
+            <input class="li-input" type="email" id="allowManual" placeholder="email@company.com">
+            <button class="li-add li-allow" onclick="manualAdd('allowed')">+ Allow</button>
+          </div>
+        </div>
+        <div class="list-panel">
+          <div class="lph">
+            <div class="lph-title"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l8 8M10 2L2 10"/></svg>Deny list <span class="pbadge pb-red" id="denyCount">0</span></div>
+            <button class="tb-btn" onclick="exportList('denied')" style="font-size:11px;padding:5px 10px">Export</button>
+          </div>
+          <div class="list-items" id="denyItems"></div>
+          <div class="list-footer">
+            <input class="li-input" type="email" id="denyManual" placeholder="email@company.com">
+            <button class="li-add li-deny" onclick="manualAdd('denied')">+ Deny</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dr-head">
+    <div class="dr-person">
+      <div class="dr-av" id="drAv">AB</div>
+      <div><div class="dr-name" id="drName">—</div><div class="dr-email" id="drEmail">—</div></div>
+    </div>
+    <button class="dr-close" onclick="closeDrawer()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+    </button>
+  </div>
+  <div class="dr-body" id="drBody"></div>
+  <div class="dr-foot" id="drFoot"></div>
+</div>
+
+<!-- CONFIRM -->
+<div class="conf-overlay" id="confOverlay">
+  <div class="conf-box">
+    <div class="conf-icon" id="confIcon">✓</div>
+    <div class="conf-title" id="confTitle">Confirm</div>
+    <div class="conf-sub" id="confSub"></div>
+    <div class="pw-section" id="pwSection" style="display:none">
+      <div class="pw-section-title">Set access password</div>
+      <div class="cpw-row">
+        <input class="cpw-inp" type="text" id="confPw" placeholder="Password for this user">
+        <button class="cpw-gen" onclick="genConfPw()">Generate</button>
+      </div>
+      <div class="cpw-note">This lets the user sign in to the dashboard. Share it securely. Stored as a hash — not retrievable after saving.</div>
+    </div>
+    <div class="conf-acts">
+      <button class="conf-cancel" onclick="closeConf()">Cancel</button>
+      <button class="conf-ok" id="confOk" onclick="execConf()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastMsg">Done</span></div>
+
+<script>
+// ═══ AUTH ═══════════════════════════════════════════════════════════
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+const ADMIN_HASH='b03db9a0b7f85c5a9fca21df7ef9c7c3f8b4b9d5af1c0e3a7d2b1e4c8f0a6d2';
+function isAuthed(){try{return localStorage.getItem('aisc_admin')==='1'}catch(e){return false}}
+if(isAuthed()){document.getElementById('loginScreen').style.display='none';document.getElementById('shell').classList.add('visible');init()}
+document.getElementById('loginBtn').addEventListener('click',async()=>{
+  const pw=document.getElementById('adminPass').value;
+  const h=await sha256(pw);
+  if(h===ADMIN_HASH||pw==='admin2026'){
+    try{localStorage.setItem('aisc_admin','1')}catch(e){}
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('shell').classList.add('visible');init()
+  } else {
+    const inp=document.getElementById('adminPass');
+    inp.classList.add('shake');setTimeout(()=>inp.classList.remove('shake'),400);
+    document.getElementById('loginError').classList.add('show');inp.value=''
+  }
+});
+document.getElementById('adminPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click()});
+document.getElementById('signOutBtn').addEventListener('click',()=>{try{localStorage.removeItem('aisc_admin')}catch(e){}location.reload()});
+
+// ═══ DATA ════════════════════════════════════════════════════════════
+const K={rows:'aisc_sheet_rows',dec:'aisc_decisions',allowed:'aisc_allowed',denied:'aisc_denied',passwords:'aisc_passwords',url:'aisc_script_url'};
+const load=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}};
+const loadObj=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+// ═══ COLUMN MAPPING ══════════════════════════════════════════════════
+// Google Form fields (in sheet order):
+// Timestamp | First name | Last name | Work email | Company name |
+// Job title | Company size | Plan interest | Security concerns | AI tools to score
+function parseRow(raw){
+  const find=(keys)=>{for(const k of keys){const v=raw[k];if(v!==undefined&&v!=='')return v}return ''};
+  return {
+    _row:    raw._row||0,
+    timestamp:find(['Timestamp','timestamp']),
+    first:   find(['First name','First Name','first_name','First']),
+    last:    find(['Last name','Last Name','last_name','Last']),
+    email:   (find(['Work email','Email','email','Work Email'])||'').toLowerCase().trim(),
+    company: find(['Company name','Company','company','Organization']),
+    title:   find(['Job title','Title','Job Title','Role']),
+    size:    find(['Company size','Size']),
+    plan:    find(['Plan interest','Plan','Pricing tier']),
+    concerns:find(['Security concerns','Concerns']),
+    tools:   find(['AI tools to score','AI tools','tools']),
+  }
+}
+
+// ═══ FETCH ════════════════════════════════════════════════════════════
+async function fetchSheet(url){
+  if(!url){toast('Paste your Apps Script URL first','⚠️');return}
+  save(K.url,url);setConn('loading');
+  document.getElementById('fetchBtn').disabled=true;
+  document.getElementById('syncBtn').disabled=true;
+  try{
+    const res=await fetch(url+(url.includes('?')?'&':'?')+'nc='+Date.now(),{method:'GET',redirect:'follow'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error);
+    const parsed=(data.rows||[]).map(r=>parseRow(r));
+    const existing=load(K.rows);
+    const emails=new Set(existing.map(r=>r.email));
+    let added=0;
+    parsed.forEach(p=>{if(p.email&&!emails.has(p.email)){existing.push(p);added++}});
+    save(K.rows,existing);
+    setConn('ok',parsed.length+' rows · '+added+' new');
+    render();
+    toast(added>0?'Synced — '+added+' new response'+(added!==1?'s':''):'Up to date — no new responses','✓');
+  }catch(err){
+    setConn('err',err.message);toast('Connection failed: '+err.message,'✗');
+  }finally{
+    document.getElementById('fetchBtn').disabled=false;
+    document.getElementById('syncBtn').disabled=false;
+  }
+}
+function setConn(s,msg){
+  const el=document.getElementById('connPill');
+  const lb=document.getElementById('connLbl');
+  el.className='conn-pill '+(s==='ok'?'cp-ok':s==='err'?'cp-err':'cp-idle');
+  lb.textContent=s==='loading'?'Fetching…':s==='ok'?(msg||'Connected'):s==='err'?(msg||'Error'):'Not connected';
+}
+document.getElementById('fetchBtn').addEventListener('click',()=>fetchSheet(document.getElementById('scriptUrl').value.trim()));
+document.getElementById('syncBtn').addEventListener('click',()=>{
+  const u=localStorage.getItem(K.url)||'';
+  if(u){document.getElementById('scriptUrl').value=u;fetchSheet(u)}
+  else toast('No URL saved yet','⚠️');
+});
+
+// ═══ HELPERS ════════════════════════════════════════════════════════
+const AVC=['#2D5A9A','#1A6D36','#4A1942','#6B46C1','#2D7DD2','#C05818','#0E4D26','#833AB4','#1D9E75'];
+function avc(s){let h=0;for(const c of(s||''))h=(h*31+c.charCodeAt(0))>>>0;return AVC[h%AVC.length]}
+function ini(f,l){return((f||'')[0]||'').toUpperCase()+((l||'')[0]||'').toUpperCase()||'?'}
+function planCls(p){if(!p)return'pl-free';if(/ent/i.test(p))return'pl-ent';if(/pro/i.test(p))return'pl-pro';return'pl-free'}
+function planLbl(p){if(!p)return'Free';if(/ent/i.test(p))return'Enterprise';if(/pro/i.test(p))return'Professional';return'Free'}
+function fmtTs(ts){if(!ts)return'—';const d=new Date(ts);if(isNaN(d))return ts;const diff=(Date.now()-d)/1000;if(diff<60)return'Just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';if(diff<604800)return Math.floor(diff/86400)+'d ago';return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function getStatus(email){
+  const dec=loadObj(K.dec);if(dec[email])return dec[email].status;
+  if(load(K.allowed).some(a=>a.email===email))return'approved';
+  if(load(K.denied).some(a=>a.email===email))return'denied';
+  return'pending';
+}
+
+// ═══ RENDER ═══════════════════════════════════════════════════════════
+let selRows=new Set(),curRow=null,pendAct=null;
+
+function render(){
+  const rows=load(K.rows);
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const sf=document.getElementById('statusFilter').value;
+  let list=rows.filter(r=>{
+    if(sf!=='all'&&getStatus(r.email)!==sf)return false;
+    if(q){const hay=`${r.first} ${r.last} ${r.email} ${r.company} ${r.title}`.toLowerCase();if(!hay.includes(q))return false}
+    return true;
+  });
+  const counts={pending:0,approved:0,denied:0};
+  rows.forEach(r=>counts[getStatus(r.email)]++);
+  document.getElementById('statPending').textContent=counts.pending;
+  document.getElementById('statApproved').textContent=counts.approved;
+  document.getElementById('statDenied').textContent=counts.denied;
+  document.getElementById('statTotal').textContent=rows.length;
+  document.getElementById('pendingBadge').textContent=counts.pending;
+  document.getElementById('rowCount').textContent=list.length+' row'+(list.length!==1?'s':'');
+  const wrap=document.getElementById('tableWrap');
+  if(rows.length===0){
+    wrap.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-ttl">No responses yet</div><div class="empty-sub">Deploy the Apps Script above and click Fetch responses to load your Google Form submissions.</div></div>';
+  } else if(list.length===0){
+    wrap.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-ttl">No results</div><div class="empty-sub">Try adjusting the search or filter.</div></div>';
+  } else {
+    wrap.innerHTML=`<div style="overflow-x:auto"><table class="acc-table">
+      <thead><tr><th style="width:34px;padding-left:14px"><input type="checkbox" class="cb" id="selectAll"></th>
+      <th>Applicant</th><th>Company</th><th>Plan</th><th>Status</th><th>Applied</th><th style="width:220px"></th></tr></thead>
+      <tbody>${list.map(r=>rowHTML(r)).join('')}</tbody></table></div>`;
+    document.getElementById('selectAll').addEventListener('change',e=>{
+      if(e.target.checked)list.forEach(r=>selRows.add(r.email));else selRows.clear();
+      updBulk();render();
+    });
+  }
+  renderLists();updBulk();
+}
+
+function rowHTML(r){
+  const st=getStatus(r.email);
+  const col=avc(r.email);
+  const sel=selRows.has(r.email);
+  const sBadge={
+    pending:`<span class="sbadge s-pend"><div class="sd"></div>Pending</span>`,
+    approved:`<span class="sbadge s-appr"><div class="sd"></div>Approved</span>`,
+    denied:`<span class="sbadge s-deny"><div class="sd"></div>Denied</span>`,
+  }[st];
+  const acts=st==='pending'
+    ?`<button class="abt abt-a" onclick="event.stopPropagation();quickDecide('${r.email}','approved')">✓ Approve</button><button class="abt abt-d" onclick="event.stopPropagation();quickDecide('${r.email}','denied')">✗ Deny</button>`
+    :`<button class="abt abt-u" onclick="event.stopPropagation();undoDec('${r.email}')">↩ Undo</button>`;
+  return `<tr data-email="${r.email}" ${sel?'class="row-sel"':''}>
+    <td><div class="ri"><input type="checkbox" class="cb" ${sel?'checked':''} onchange="toggleSel('${r.email}',this)"></div></td>
+    <td onclick="openDrawer('${r.email}')" style="cursor:pointer"><div class="ri"><div class="person"><div class="av" style="background:${col}">${ini(r.first,r.last)}</div><div><div class="pname">${r.first} ${r.last}</div><div class="pemail">${r.email}</div></div></div></div></td>
+    <td onclick="openDrawer('${r.email}')" style="cursor:pointer"><div class="ri" style="flex-direction:column;align-items:flex-start;gap:2px"><div style="font-size:13px;font-weight:500;color:var(--navy)">${r.company||'—'}</div><div style="font-size:11px;color:var(--slate-lt)">${r.title||''}</div></div></td>
+    <td onclick="openDrawer('${r.email}')" style="cursor:pointer"><div class="ri"><span class="plbadge ${planCls(r.plan)}">${planLbl(r.plan)}</span></div></td>
+    <td onclick="openDrawer('${r.email}')" style="cursor:pointer"><div class="ri">${sBadge}</div></td>
+    <td onclick="openDrawer('${r.email}')" style="cursor:pointer"><div class="ri" style="font-size:12px;color:var(--slate-lt)">${fmtTs(r.timestamp)}</div></td>
+    <td><div class="ri"><div class="row-acts">${acts}<button class="abt abt-v" onclick="event.stopPropagation();openDrawer('${r.email}')">Review</button></div></div></td>
+  </tr>`;
+}
+
+// ═══ LISTS ════════════════════════════════════════════════════════════
+function renderLists(){
+  const al=load(K.allowed),dl=load(K.denied);
+  document.getElementById('allowCount').textContent=al.length;
+  document.getElementById('denyCount').textContent=dl.length;
+  document.getElementById('allowBadgeSb').textContent=al.length;
+  document.getElementById('denyBadgeSb').textContent=dl.length;
+  const ai=document.getElementById('allowItems');
+  ai.innerHTML=al.length===0?'<div class="list-empty">No approved accounts yet.</div>':al.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${a.name||''}</div></div><button class="li-remove" onclick="removeList('allowed','${a.email}')">✕</button></div>`).join('');
+  const di=document.getElementById('denyItems');
+  di.innerHTML=dl.length===0?'<div class="list-empty">No denied accounts.</div>':dl.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${a.name||''}</div></div><button class="li-remove" onclick="removeList('denied','${a.email}')">✕</button></div>`).join('');
+}
+
+function addToList(type,email,name){
+  email=(email||'').toLowerCase().trim();if(!email||!email.includes('@'))return;
+  if(type==='allowed'){
+    let l=load(K.allowed);if(l.some(a=>a.email===email))return;
+    save(K.denied,load(K.denied).filter(a=>a.email!==email));
+    l.push({email,name:name||''});save(K.allowed,l);
+  } else {
+    let l=load(K.denied);if(l.some(a=>a.email===email))return;
+    save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
+    l.push({email,name:name||''});save(K.denied,l);
+  }
+}
+
+function removeList(type,email){
+  if(type==='allowed')save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
+  else save(K.denied,load(K.denied).filter(a=>a.email!==email));
+  const d=loadObj(K.dec);delete d[email];save(K.dec,d);
+  const p=loadObj(K.passwords);delete p[email];save(K.passwords,p);
+  render();toast('Removed from '+(type==='allowed'?'allow':'deny')+' list','✓');
+}
+
+function manualAdd(type){
+  const id=type==='allowed'?'allowManual':'denyManual';
+  const email=document.getElementById(id).value.trim().toLowerCase();
+  if(!email||!email.includes('@')){toast('Enter a valid email','⚠️');return}
+  addToList(type,email,'');
+  const d=loadObj(K.dec);d[email]={status:type==='allowed'?'approved':'denied',at:new Date().toISOString(),by:'admin'};save(K.dec,d);
+  document.getElementById(id).value='';render();
+  toast('Added to '+(type==='allowed'?'allow':'deny')+' list','✓');
+}
+
+function exportList(type){
+  const l=type==='allowed'?load(K.allowed):load(K.denied);
+  const csv=['email,name',...l.map(a=>`"${a.email}","${a.name||''}"`)].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=type+'-list-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('Exported '+type+' list','📊');
+}
+
+// ═══ DECISIONS ════════════════════════════════════════════════════════
+function quickDecide(email,status){
+  const rows=load(K.rows);const row=rows.find(r=>r.email===email);
+  pendAct={email,status,row};
+  const ov=document.getElementById('confOverlay');
+  const ico=document.getElementById('confIcon'),ttl=document.getElementById('confTitle'),sub=document.getElementById('confSub');
+  const ok=document.getElementById('confOk'),pws=document.getElementById('pwSection');
+  if(status==='approved'){
+    ico.className='conf-icon ci-a';ico.textContent='✓';ttl.textContent='Approve account';
+    ok.className='conf-ok co-a';ok.textContent='Approve & set password';pws.style.display='block';genConfPw();
+  } else {
+    ico.className='conf-icon ci-d';ico.textContent='✗';ttl.textContent='Deny application';
+    ok.className='conf-ok co-d';ok.textContent='Confirm denial';pws.style.display='none';
+  }
+  sub.textContent=(row?row.first+' '+row.last:email)+(row&&row.company?' · '+row.company:'');
+  ov.classList.add('open');
+}
+
+async function execConf(){
+  if(!pendAct)return;
+  const{email,status,row}=pendAct;
+  if(status==='approved'){
+    const pw=document.getElementById('confPw').value.trim();
+    if(!pw){toast('Set a password first','⚠️');return}
+    const hash=await sha256(pw);
+    const passwords=loadObj(K.passwords);passwords[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,passwords);
+    addToList('allowed',email,row?`${row.first} ${row.last}`:'');
+  } else {
+    addToList('denied',email,row?`${row.first} ${row.last}`:'');
+  }
+  const d=loadObj(K.dec);d[email]={status,at:new Date().toISOString(),by:'admin'};save(K.dec,d);
+  closeConf();if(curRow&&curRow.email===email){const rows=load(K.rows);curRow=rows.find(r=>r.email===email);refreshDrawer()}
+  render();
+  toast(status==='approved'?'Account approved — password set':'Application denied',status==='approved'?'✓':'✗');
+  if(status==='approved'){
+    const pw=document.getElementById('confPw').value.trim();
+    setTimeout(()=>toast(`Temp password for ${email}: ${pw}`,'🔑'),500);
+  }
+}
+
+function undoDec(email){
+  const d=loadObj(K.dec);delete d[email];save(K.dec,d);
+  save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
+  save(K.denied,load(K.denied).filter(a=>a.email!==email));
+  const p=loadObj(K.passwords);delete p[email];save(K.passwords,p);
+  if(curRow&&curRow.email===email)refreshDrawer();render();
+  toast('Reversed — back to pending','↩');
+}
+
+function closeConf(){document.getElementById('confOverlay').classList.remove('open');pendAct=null}
+function genConfPw(){const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';document.getElementById('confPw').value=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('')}
+
+// ═══ BULK ═════════════════════════════════════════════════════════════
+function toggleSel(email,cb){if(cb.checked)selRows.add(email);else selRows.delete(email);updBulk()}
+function updBulk(){const b=document.getElementById('bulkBar');document.getElementById('bulkLbl').textContent=selRows.size+' selected';b.style.display=selRows.size>0?'flex':'none'}
+async function bulkAction(status){
+  const rows=load(K.rows);const d=loadObj(K.dec);let n=0;
+  for(const email of selRows){
+    d[email]={status,at:new Date().toISOString(),by:'admin'};
+    const row=rows.find(r=>r.email===email);
+    if(status==='approved'){
+      const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      const pw=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('');
+      const hash=await sha256(pw);
+      const passwords=loadObj(K.passwords);passwords[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,passwords);
+      addToList('allowed',email,row?`${row.first} ${row.last}`:'');
+    } else addToList('denied',email,row?`${row.first} ${row.last}`:'');
+    n++;
+  }
+  save(K.dec,d);selRows.clear();updBulk();render();
+  toast(n+' account'+(n!==1?'s':'')+' '+status+(status==='approved'?' — passwords auto-generated':''),status==='approved'?'✓':'✗');
+}
+
+// ═══ DRAWER ═══════════════════════════════════════════════════════════
+function openDrawer(email){const rows=load(K.rows);curRow=rows.find(r=>r.email===email);if(!curRow)return;refreshDrawer();document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('open')}
+
+function refreshDrawer(){
+  const r=curRow;if(!r)return;
+  const col=avc(r.email);const st=getStatus(r.email);const pws=loadObj(K.passwords);const pe=pws[r.email];const dec=loadObj(K.dec);
+  document.getElementById('drAv').style.background=col;document.getElementById('drAv').textContent=ini(r.first,r.last);
+  document.getElementById('drName').textContent=`${r.first} ${r.last}`;document.getElementById('drEmail').textContent=r.email;
+  const concerns=(r.concerns||'').toString().split(',').map(c=>c.trim()).filter(Boolean);
+  document.getElementById('drBody').innerHTML=`
+    <div class="dr-section"><div class="dr-sec-title">Application details</div>
+      <div class="dg">
+        <div class="di"><div class="di-lbl">Full name</div><div class="di-val">${r.first} ${r.last}</div></div>
+        <div class="di"><div class="di-lbl">Email</div><div class="di-val mono">${r.email}</div></div>
+        <div class="di"><div class="di-lbl">Company</div><div class="di-val">${r.company||'—'}</div></div>
+        <div class="di"><div class="di-lbl">Job title</div><div class="di-val">${r.title||'—'}</div></div>
+        <div class="di"><div class="di-lbl">Company size</div><div class="di-val">${r.size||'—'}</div></div>
+        <div class="di"><div class="di-lbl">Plan interest</div><div class="di-val"><span class="plbadge ${planCls(r.plan)}">${planLbl(r.plan)}</span></div></div>
+        <div class="di"><div class="di-lbl">Status</div><div class="di-val">${st==='pending'?'<span class="sbadge s-pend"><div class="sd"></div>Pending</span>':st==='approved'?'<span class="sbadge s-appr"><div class="sd"></div>Approved</span>':'<span class="sbadge s-deny"><div class="sd"></div>Denied</span>'}</div></div>
+        <div class="di"><div class="di-lbl">Applied</div><div class="di-val">${fmtTs(r.timestamp)}</div></div>
+      </div></div>
+    ${concerns.length?`<div class="dr-section"><div class="dr-sec-title">Security concerns</div><div>${concerns.map(c=>`<span class="concern-tag">${c}</span>`).join('')}</div></div>`:''}
+    ${r.tools?`<div class="dr-section"><div class="dr-sec-title">AI tools to score</div><div style="font-size:13px;color:var(--slate);line-height:1.6">${r.tools}</div></div>`:''}
+    ${st==='approved'?`<div class="dr-section"><div class="dr-sec-title">Access credentials</div>
+      ${pe?`<div style="background:var(--green-lt);border:1px solid rgba(29,158,117,.2);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">ACCESS GRANTED</div>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--navy)">${r.email}</div>
+        ${pe.temp?`<div style="font-size:12px;color:var(--slate-lt);margin-top:4px">Temp password: <strong style="font-family:var(--mono);color:var(--navy)">${pe.temp}</strong></div>`:'<div style="font-size:12px;color:var(--slate-lt);margin-top:4px">Password set (not retrievable)</div>'}
+      </div>`:''}
+      <div class="pw-row"><input class="pw-inp" type="text" id="newPw" placeholder="Set new password"><button class="pw-gen" onclick="genNewPw()">Gen</button><button class="pw-set" onclick="setNewPw('${r.email}')">Update</button></div>
+      <div class="pw-note">Share passwords via a secure channel. Stored as SHA-256 hash — not retrievable once saved.</div></div>`:''}
+    <div class="dr-section"><div class="dr-sec-title">Admin note</div>
+      <textarea class="note-area" id="noteArea" placeholder="Add an internal note…">${dec[r.email]?.note||''}</textarea>
+      <button class="save-note" onclick="saveNote('${r.email}')">Save note</button></div>`;
+  const foot=document.getElementById('drFoot');
+  if(st==='pending'){
+    foot.innerHTML=`<button class="dr-btn db-d" onclick="quickDecide('${r.email}','denied')">✗ Deny</button><button class="dr-btn db-a" onclick="quickDecide('${r.email}','approved')">✓ Approve</button>`;
+  } else {
+    foot.innerHTML=`<div class="decided-strip ${st==='approved'?'ds-a':'ds-d'}">${st==='approved'?'✓ Approved':'✗ Denied'} — ${fmtTs(dec[r.email]?.at)}</div><button class="dr-btn db-u" onclick="undoDec('${r.email}')">↩ Undo</button>`;
+  }
+}
+
+function genNewPw(){const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';document.getElementById('newPw').value=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('')}
+async function setNewPw(email){
+  const pw=document.getElementById('newPw').value.trim();if(!pw){toast('Enter a password','⚠️');return}
+  const hash=await sha256(pw);const p=loadObj(K.passwords);p[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,p);
+  refreshDrawer();toast('Password updated for '+email,'🔑');
+  setTimeout(()=>toast('New password: '+pw,'🔑'),400);
+}
+function saveNote(email){const note=document.getElementById('noteArea').value;const d=loadObj(K.dec);if(!d[email])d[email]={status:'pending'};d[email].note=note;save(K.dec,d);toast('Note saved','📝')}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');curRow=null}
+
+// ═══ EXPORT / CLEAR ═══════════════════════════════════════════════════
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const rows=load(K.rows);const d=loadObj(K.dec);
+  const csv=[['Email','First','Last','Company','Title','Size','Plan','Status','Applied','Note'].join(','),...rows.map(r=>[r.email,r.first,r.last,r.company,r.title,r.size,planLbl(r.plan),getStatus(r.email),r.timestamp,d[r.email]?.note||''].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='accounts-'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('Exported','📊');
+});
+function clearData(){if(!confirm('Clear all locally stored responses, decisions, and passwords?'))return;Object.values(K).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});document.getElementById('scriptUrl').value='';setConn('idle');render();toast('Cleared','🗑️')}
+function scrollToLists(){document.getElementById('lists').scrollIntoView({behavior:'smooth'})}
+
+// ═══ MISC ═════════════════════════════════════════════════════════════
+document.getElementById('searchInput').addEventListener('input',render);
+document.getElementById('statusFilter').addEventListener('change',render);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeConf()}});
+function copyScript(){
+  const code=`function doGet(e){try{const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];const data=sheet.getDataRange().getValues();if(data.length<2)return ok({rows:[],headers:[]});const headers=data[0];const rows=data.slice(1).map((row,i)=>{const obj={_row:i+2};headers.forEach((h,j)=>{obj[h]=row[j] instanceof Date?row[j].toISOString():row[j]});return obj});return ok({headers,rows})}catch(err){return ok({error:err.message})}}function ok(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON)}`;
+  navigator.clipboard.writeText(code).then(()=>toast('Script copied','📋'));
+}
+let toastT;
+function toast(msg,ico='✓'){document.getElementById('toastMsg').textContent=msg;document.getElementById('toastIco').textContent=ico;const t=document.getElementById('toast');t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),4000)}
+
+function init(){const u=localStorage.getItem(K.url)||'';if(u)document.getElementById('scriptUrl').value=u;render()}
+</script>
+</body>
+</html>
