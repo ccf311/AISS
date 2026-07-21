@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow Security Assessment — AI Security Scorecard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ════════ Supabase config — fill in your project's values ════════
+     Find these in your Supabase project: Settings → API
+       SUPABASE_URL      → "Project URL"
+       SUPABASE_ANON_KEY → "anon public" key
+     See supabase-schema.sql for the tables/policies this page depends on. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://fyptyekudncxgehnyehz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_-kFwdNoBFI9fANSyVeBOwg_-LYkx6HS';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B3E; --navy-mid:#1A2D5C; --navy-lt:#243660;
+  --orange:#E86A27; --orange-lt:#FDF0E8; --orange-dim:#C05818;
+  --green:#1D9E75; --green-lt:#E6F7F2;
+  --red:#E24B4A; --red-lt:#FCEBEB;
+  --amber:#FAC775; --amber-lt:#FEF9EE;
+  --purple:#7C3AED; --purple-lt:#F3F0FF;
+  --blue:#2D7DD2; --blue-lt:#EBF4FF;
+  --slate:#374151; --slate-lt:#6B7280;
+  --border:#E5E7EB; --bg:#F9FAFB; --white:#FFFFFF;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+  --radius:10px; --shadow:0 4px 24px rgba(13,27,62,.10);
+  --sidebar:220px; --header:60px;
+  --grade-a:#1D9E75; --grade-b:#2D7DD2; --grade-c:#B45309; --grade-d:#C2410C; --grade-f:#E24B4A;
+}
+html,body{height:100%}
+body{font-family:var(--body);color:var(--slate);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+::placeholder{color:var(--slate-lt)}
+
+/* ── App shell (mirrors alerts.html) ── */
+#appShell{display:none;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:var(--header) 1fr;min-height:100vh}
+#appShell.visible{display:grid}
+.sidebar{grid-row:1/3;background:var(--navy);display:flex;flex-direction:column}
+.sb-top{height:var(--header);display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-mark{width:28px;height:28px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+.sb-name{font-family:var(--display);font-size:13px;font-weight:700;color:#fff;line-height:1.25}
+.sb-name span{display:block;font-size:9.5px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.sb-nav{flex:1;padding:14px 8px;display:flex;flex-direction:column;gap:1px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff}
+.sb-bottom{padding:12px 8px 16px;border-top:1px solid rgba(255,255,255,.06)}
+
+.topbar{grid-column:2;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:var(--header)}
+.topbar h1{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:10px}
+.plan-badge{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--orange-lt);color:var(--orange-dim);padding:3px 9px;border-radius:20px}
+
+.main{grid-column:2;padding:32px;overflow-y:auto}
+.wrap{max-width:900px;margin:0 auto}
+
+/* ── Upload state ── */
+.upload-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center}
+.upload-eyebrow{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
+.upload-title{font-family:var(--display);font-size:24px;font-weight:700;color:var(--navy);letter-spacing:-.02em;margin-bottom:10px}
+.upload-sub{font-size:14px;color:var(--slate-lt);line-height:1.6;max-width:520px;margin:0 auto 28px}
+.dropzone{border:2px dashed var(--border);border-radius:14px;padding:48px 24px;cursor:pointer;transition:all .15s;background:var(--bg)}
+.dropzone:hover,.dropzone.drag{border-color:var(--orange);background:var(--orange-lt)}
+.dropzone-icon{width:52px;height:52px;border-radius:14px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.dropzone-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.dropzone-sub{font-size:12.5px;color:var(--slate-lt)}
+.dropzone input{display:none}
+.upload-meta{display:flex;justify-content:center;gap:24px;margin-top:22px;font-size:12px;color:var(--slate-lt)}
+.upload-meta span{font-weight:600;color:var(--slate)}
+.upload-error{margin-top:16px;background:var(--red-lt);border:1px solid rgba(226,75,74,.25);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;text-align:left;display:none}
+.upload-error.show{display:block}
+.file-chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--navy);margin-top:14px}
+.scan-progress{display:none;margin-top:20px}
+.scan-progress.show{display:block}
+.scan-bar-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.scan-bar-fill{height:100%;width:0;background:var(--orange);border-radius:3px;transition:width .3s}
+.scan-progress-text{font-size:12.5px;color:var(--slate-lt);margin-top:10px}
+
+/* ── Results state ── */
+#resultsView{display:none}
+#resultsView.visible{display:block}
+.result-hero{background:var(--navy);border-radius:16px;padding:32px 36px;display:flex;align-items:center;gap:32px;margin-bottom:24px;color:#fff}
+.result-grade-ring{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--display);font-size:40px;font-weight:700;border:4px solid}
+.rg-a{border-color:var(--grade-a);color:var(--grade-a);background:rgba(29,158,117,.12)}
+.rg-b{border-color:var(--grade-b);color:var(--grade-b);background:rgba(45,125,210,.12)}
+.rg-c{border-color:var(--grade-c);color:#F4A94A;background:rgba(180,83,9,.12)}
+.rg-d{border-color:var(--grade-d);color:#F4834A;background:rgba(194,65,12,.12)}
+.rg-f{border-color:var(--grade-f);color:var(--grade-f);background:rgba(226,75,74,.15)}
+.result-hero-meta{flex:1}
+.result-hero-file{font-size:12.5px;color:rgba(255,255,255,.5);margin-bottom:4px;font-family:var(--mono)}
+.result-hero-title{font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:6px}
+.result-hero-sub{font-size:13.5px;color:rgba(255,255,255,.6);line-height:1.6;max-width:480px}
+.result-hero-score{text-align:right;flex-shrink:0}
+.result-hero-score-num{font-family:var(--display);font-size:30px;font-weight:700}
+.result-hero-score-lbl{font-size:11.5px;color:rgba(255,255,255,.5)}
+
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.cat-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.cat-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cat-card-name{font-size:13px;font-weight:600;color:var(--navy)}
+.cat-card-score{font-family:var(--display);font-size:13px;font-weight:700;color:var(--navy)}
+.cat-bar-track{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:3px}
+.cat-na{font-size:11px;color:var(--slate-lt);margin-top:4px;font-style:italic}
+
+.findings-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.findings-head h2{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy)}
+.sev-filter{display:flex;gap:6px}
+.sev-btn{font-family:var(--display);font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--slate-lt);cursor:pointer}
+.sev-btn.active{border-color:var(--navy);background:var(--navy);color:#fff}
+
+.finding-card{background:#fff;border:1px solid var(--border);border-left-width:4px;border-radius:10px;padding:16px 18px;margin-bottom:10px}
+.fc-critical{border-left-color:var(--red)}
+.fc-high{border-left-color:var(--orange)}
+.fc-medium{border-left-color:#B45309}
+.fc-low{border-left-color:var(--blue)}
+.finding-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.sev-pill{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+.sp-critical{background:var(--red-lt);color:var(--red)}
+.sp-high{background:var(--orange-lt);color:var(--orange-dim)}
+.sp-medium{background:var(--amber-lt);color:#B45309}
+.sp-low{background:var(--blue-lt);color:var(--blue)}
+.finding-title{font-size:14px;font-weight:600;color:var(--navy)}
+.finding-detail{font-size:13px;color:var(--slate);line-height:1.6;margin-bottom:8px}
+.finding-path{font-family:var(--mono);font-size:11px;color:var(--slate-lt);background:var(--bg);padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:8px}
+.finding-remediation{font-size:12.5px;color:var(--slate);background:var(--green-lt);border-radius:8px;padding:9px 12px;line-height:1.5}
+.finding-remediation strong{color:var(--green)}
+.finding-fw{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.fw-tag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.fw-nist{background:var(--blue-lt);color:var(--blue)}
+.fw-owasp{background:var(--purple-lt);color:var(--purple)}
+.fw-atlas{background:var(--red-lt);color:var(--red)}
+.no-findings{text-align:center;padding:40px;color:var(--slate-lt);font-size:13.5px}
+
+.result-actions{display:flex;justify-content:center;gap:12px;margin:28px 0 8px}
+.btn{font-family:var(--display);font-weight:700;font-size:13.5px;border:none;border-radius:9px;cursor:pointer;transition:all .16s;padding:11px 22px;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange-dim)}
+.btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--navy)}
+
+.scope-note{background:var(--blue-lt);border:1px solid rgba(45,125,210,.2);border-radius:10px;padding:14px 16px;font-size:12.5px;color:var(--navy);line-height:1.6;margin-bottom:24px}
+.scope-note a{color:var(--blue);font-weight:600}
+
+@media(max-width:720px){
+  .cat-grid{grid-template-columns:1fr}
+  .result-hero{flex-direction:column;text-align:center}
+  .result-hero-score{text-align:center}
+}
+</style>
+</head>
+<body>
+
+<div id="appShell">
+  <div class="sidebar">
+    <div class="sb-top">
+      <div class="sb-mark">AI</div>
+      <div class="sb-name">AI Security<span>Scorecard</span></div>
+    </div>
+    <div class="sb-nav">
+      <a href="dashboard.html" class="nav-item">Dashboard</a>
+      <a href="vendors.html" class="nav-item">Vendor Directory</a>
+      <a href="alerts.html" class="nav-item">Alerts & Clients</a>
+      <a href="workflow-assessment.html" class="nav-item active">Workflow Assessment</a>
+      <a href="billing.html" class="nav-item">Plan & Billing</a>
+    </div>
+    <div class="sb-bottom">
+      <a href="#" class="nav-item" id="logoutBtn">Log out</a>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <h1>Workflow Security Assessment <span class="plan-badge">Paid feature</span></h1>
+    <a href="methodology.html#workflow-assessment" class="btn btn-outline" style="padding:8px 15px;font-size:12.5px">View methodology</a>
+  </div>
+
+  <div class="main">
+    <div class="wrap">
+
+      <div class="scope-note">
+        This is a static, structural review of the JSON you upload — it does not execute your workflow. It's built to work across n8n, Zapier, Make, LangChain, and custom exports without assuming a specific schema, which means it can miss risks expressed in unfamiliar ways. Read the <a href="methodology.html#wf-limitations">full limitations</a> before treating a passing grade as a guarantee. Nothing you upload leaves your browser — the scan runs entirely client-side.
+      </div>
+
+      <!-- ── UPSELL (free-plan users) ── -->
+      <div id="upsellView" style="display:none">
+        <div class="upload-card">
+          <div class="upload-eyebrow">Professional plan required</div>
+          <div class="upload-title">Upgrade to run a workflow assessment</div>
+          <p class="upload-sub">Workflow security assessments are available on the Professional plan and above. Upgrade to scan your automations against the methodology, or check out the report format on the methodology page first.</p>
+          <div style="display:flex;justify-content:center;gap:12px">
+            <a href="billing.html" class="btn btn-primary">View plans</a>
+            <a href="methodology.html#workflow-assessment" class="btn btn-outline">See the methodology</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── UPLOAD STATE ── -->
+      <div id="uploadView">
+        <div class="upload-card">
+          <div class="upload-eyebrow">Step 1 of 1</div>
+          <div class="upload-title">Upload a workflow to assess</div>
+          <p class="upload-sub">Export your workflow as JSON from your automation platform, then drop it below. We'll score it against the <a href="methodology.html#workflow-assessment" style="color:var(--orange);font-weight:600">Workflow Security Assessment methodology</a> — six categories informed by NIST AI RMF, OWASP's LLM &amp; Agentic Top 10s, and MITRE ATLAS.</p>
+
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <div class="dropzone-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            </div>
+            <div class="dropzone-title">Drop your .json file here</div>
+            <div class="dropzone-sub">or click to browse — max 5 MB</div>
+            <input type="file" id="fileInput" accept=".json,application/json">
+          </label>
+
+          <div class="upload-error" id="uploadError"></div>
+          <div id="fileChipWrap"></div>
+
+          <div class="scan-progress" id="scanProgress">
+            <div class="scan-bar-track"><div class="scan-bar-fill" id="scanBarFill"></div></div>
+            <div class="scan-progress-text" id="scanProgressText">Parsing workflow…</div>
+          </div>
+
+          <div class="upload-meta">
+            <div><span>6</span> categories checked</div>
+            <div><span>3</span> frameworks referenced</div>
+            <div><span>100%</span> runs in your browser</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RESULTS STATE ── -->
+      <div id="resultsView">
+        <div class="result-hero" id="resultHero"></div>
+        <div class="cat-grid" id="catGrid"></div>
+        <div class="findings-head">
+          <h2>Findings</h2>
+          <div class="sev-filter" id="sevFilter">
+            <button class="sev-btn active" data-sev="all">All</button>
+            <button class="sev-btn" data-sev="critical">Critical</button>
+            <button class="sev-btn" data-sev="high">High</button>
+            <button class="sev-btn" data-sev="medium">Medium</button>
+            <button class="sev-btn" data-sev="low">Low</button>
+          </div>
+        </div>
+        <div id="findingsList"></div>
+        <div class="result-actions">
+          <button class="btn btn-outline" id="downloadReportBtn">Download report (JSON)</button>
+          <button class="btn btn-primary" id="runAnotherBtn">Assess another workflow</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Workflow Security Assessment — heuristic scan engine
+// Schema-agnostic: walks arbitrary JSON looking for risk patterns.
+// See methodology.html#workflow-assessment for what each check means.
+// ═══════════════════════════════════════════════════════════════
+const SECRET_PATTERNS = [
+  { re: /sk-(proj-|live-|test-)?[A-Za-z0-9_-]{20,}/, label: 'OpenAI-style API key' },
+  { re: /AKIA[0-9A-Z]{16}/, label: 'AWS access key ID' },
+  { re: /ghp_[A-Za-z0-9]{30,}/, label: 'GitHub personal access token' },
+  { re: /xox[baprs]-[A-Za-z0-9-]{10,}/, label: 'Slack token' },
+  { re: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/, label: 'Embedded private key block' },
+  { re: /Bearer\s+[A-Za-z0-9\-_.=]{20,}/, label: 'Bearer token' },
+];
+const SECRET_KEY_NAMES = ['apikey','api_key','secret','password','passwd','token','accesstoken','access_token','clientsecret','client_secret','privatekey','private_key','authtoken','auth_token'];
+const SAFE_REF_PATTERN = /^\s*(\{\{.*\}\}|\$\{.*\}|\$env\.|process\.env|env\.|<%.*%>|\$secrets\.|@[a-zA-Z_]+\(|vault:)/i;
+
+const DESTRUCTIVE_KEYWORDS = ['delete','drop','remove','purge','truncate','transfer','payment','refund','withdraw','sendemail','send_email','wire','deploy','terminate','revoke','ban','suspend','pay'];
+const APPROVAL_HINTS = ['approval','requireapproval','require_approval','humanreview','human_review','humanintheloop','human-in-the-loop','manualreview','manual_review','confirm','waitforapproval','wait_for_approval'];
+const WILDCARD_KEYS = ['scope','scopes','permission','permissions','access'];
+const WILDCARD_VALUES = ['*','admin','full','all','superuser','root'];
+
+const PROMPT_KEY_NAMES = ['prompt','systemprompt','system_prompt','instructions','messages','template'];
+const UNTRUSTED_SOURCE_HINTS = ['webhook','external','scraped','usercontent','user_content','emailbody','email_body','html','fetched','retrieved','document','attachment','inbound'];
+const SANITIZE_HINTS = ['sanitize','sanitise','validate','moderation','contentfilter','content_filter','guard','escape','striphtml','strip_html'];
+const TEMPLATE_VAR_RE = /\{\{|\$\{|<%/;
+
+const CODE_KEY_NAMES = ['code','script','function','eval','command','cmd','shell','exec'];
+const CODE_TYPE_HINTS = ['code','script','function','exec'];
+const SANDBOX_HINTS = ['sandbox','sandboxed','restricted','timeout','readonly','jail','isolate'];
+
+const LOGGING_HINTS = ['log','audit','logging','trace'];
+const ERROR_HINTS = ['onerror','on_error','catch','errorhandler','error_handler','fallback','retry'];
+
+const PII_KEY_NAMES = ['email','ssn','social_security','dob','dateofbirth','date_of_birth','phone','address','creditcard','credit_card','passport','nationalid','national_id'];
+const EXTERNAL_DEST_HINTS = ['webhook','http_request','httprequest','external_api','external','thirdparty','third_party','post_to','send_to'];
+const REDACT_HINTS = ['redact','mask','anonymize','anonymise','pseudonymize'];
+
+const FRAMEWORK_TAGS = {
+  liveCredential: [{fw:'owasp',id:'LLM02:2025'},{fw:'atlas',id:'Credential Access'}],
+  inlineCredential: [{fw:'nist',id:'MAP 1.1'},{fw:'owasp',id:'LLM02:2025'}],
+  ungatedDestructive: [{fw:'owasp',id:'LLM06:2025'},{fw:'owasp',id:'ASI02:2026'}],
+  wildcardScope: [{fw:'owasp',id:'ASI03:2026'},{fw:'nist',id:'MANAGE 1'}],
+  promptInjection: [{fw:'owasp',id:'LLM01:2025'},{fw:'owasp',id:'ASI01:2026'},{fw:'atlas',id:'Initial Access'}],
+  noSanitizer: [{fw:'owasp',id:'ASI06:2026'},{fw:'nist',id:'MEASURE 2'}],
+  unsandboxedCode: [{fw:'owasp',id:'ASI05:2026'},{fw:'atlas',id:'Execution'}],
+  noApproval: [{fw:'owasp',id:'ASI09:2026'},{fw:'nist',id:'MANAGE 2'}],
+  noErrorHandling: [{fw:'owasp',id:'ASI08:2026'},{fw:'nist',id:'MANAGE 4'}],
+  noLogging: [{fw:'nist',id:'GOVERN 4'},{fw:'atlas',id:'Discovery'}],
+  piiExposure: [{fw:'owasp',id:'LLM02:2025'},{fw:'owasp',id:'ASI04:2026'},{fw:'atlas',id:'Exfiltration'}],
+};
+
+function norm(s) { return String(s).toLowerCase().replace(/[_\-\s]/g, ''); }
+function parentPath(path) {
+  return path.replace(/(\.[^.\[\]]+|\[\d+\])$/, '');
+}
+function dedupeByParent(entryList) {
+  const seen = new Set();
+  const out = [];
+  for (const e of entryList) {
+    const pp = parentPath(e.path);
+    if (seen.has(pp)) continue;
+    seen.add(pp);
+    out.push(e);
+  }
+  return out;
+}
+function walk(obj, path, cb) {
+  if (obj === null || obj === undefined) return;
+  if (Array.isArray(obj)) {
+    obj.forEach((v, i) => walk(v, `${path}[${i}]`, cb));
+  } else if (typeof obj === 'object') {
+    Object.keys(obj).forEach(k => {
+      const p = path ? `${path}.${k}` : k;
+      cb(p, k, obj[k], obj);
+      walk(obj[k], p, cb);
+    });
+  }
+}
+
+function scanWorkflow(json) {
+  const entries = [];
+  walk(json, '', (path, key, value) => entries.push({ path, key, value }));
+
+  const stringEntries = entries.filter(e => typeof e.value === 'string');
+
+  function anyHintPresent(hints) {
+    return entries.some(e => {
+      const kn = norm(e.key);
+      if (hints.some(h => kn.includes(norm(h)))) return true;
+      if (typeof e.value === 'string') {
+        const vn = norm(e.value);
+        if (hints.some(h => vn.includes(norm(h)))) return true;
+      }
+      return false;
+    });
+  }
+
+  const findings = [];
+  const categories = {};
+  let gradeFloor = null;
+  let destructiveActionCount = 0;
+
+  function addFinding(category, severity, title, detail, path, fwKey, remediation) {
+    findings.push({ category, severity, title, detail, path, frameworks: FRAMEWORK_TAGS[fwKey] || [], remediation });
+  }
+
+  // 1. Credentials (20)
+  {
+    let pts = 20;
+    let liveFound = false;
+    stringEntries.forEach(e => {
+      SECRET_PATTERNS.forEach(p => {
+        if (p.re.test(e.value)) {
+          liveFound = true;
+          addFinding('credentials', 'critical', `Hardcoded ${p.label} detected`, `A string matching a known ${p.label} pattern was found in the workflow.`, e.path, 'liveCredential',
+            'Remove the literal key from the workflow and replace it with a reference to an environment variable, secret manager, or the platform\'s native credential store. Rotate this key — treat it as compromised.');
+        }
+      });
+    });
+    if (liveFound) { pts = 0; gradeFloor = 'F'; }
+    let inlineCount = 0;
+    entries.forEach(e => {
+      const kn = norm(e.key);
+      if (SECRET_KEY_NAMES.some(n => kn === norm(n)) && typeof e.value === 'string' && e.value.length > 3) {
+        if (!SAFE_REF_PATTERN.test(e.value)) {
+          inlineCount++;
+          if (inlineCount <= 5) {
+            addFinding('credentials', 'high', `Credential field "${e.key}" holds an inline value`, 'This field looks like a credential but contains a literal string instead of a variable reference.', e.path, 'inlineCredential',
+              'Replace the literal value with a reference (e.g. {{ $env.API_KEY }}, ${SECRET_NAME}, or your platform\'s credential picker) so the value isn\'t stored in plaintext inside the workflow definition.');
+          }
+        }
+      }
+    });
+    if (!liveFound) pts = Math.max(0, 20 - Math.min(12, inlineCount * 3));
+    categories.credentials = { max: 20, score: pts, label: 'Credential & Secrets Exposure' };
+  }
+
+  // 2. Agency (20)
+  {
+    const hasApprovalGate = anyHintPresent(APPROVAL_HINTS);
+    const destructiveEntriesRaw = entries.filter(e => {
+      if (!['type','action','operation','method','name','nodetype'].includes(norm(e.key))) return false;
+      if (typeof e.value !== 'string') return false;
+      const vn = norm(e.value);
+      return DESTRUCTIVE_KEYWORDS.some(k => vn.includes(norm(k)));
+    });
+    const destructiveEntries = dedupeByParent(destructiveEntriesRaw);
+    const destructiveCount = destructiveEntries.length;
+    destructiveActionCount = destructiveCount;
+
+    let pts = 20;
+    if (destructiveCount > 0 && !hasApprovalGate) {
+      pts -= 14;
+      addFinding('agency', 'critical', `${destructiveCount} destructive action${destructiveCount>1?'s':''} with no approval gate`,
+        `Found action(s) matching destructive keywords (${[...new Set(destructiveEntries.map(e=>e.value))].slice(0,3).join(', ')}) with no approval/human-review node anywhere in the workflow.`,
+        destructiveEntries[0]?.path, 'ungatedDestructive',
+        'Add a human-approval step before any irreversible or high-impact action, or scope the agent\'s permissions so it cannot reach these actions at all.');
+    } else if (destructiveCount > 0 && hasApprovalGate) {
+      pts -= 4;
+      addFinding('agency', 'low', `${destructiveCount} destructive action${destructiveCount>1?'s':''} found — approval gate present`,
+        'An approval/human-review node exists in the workflow. Static analysis cannot confirm it actually sits upstream of every destructive action listed.',
+        destructiveEntries[0]?.path, 'ungatedDestructive',
+        'Manually verify the approval node is wired to gate each destructive action, not just present somewhere in the graph.');
+    }
+    const wildcardEntries = entries.filter(e => {
+      if (!WILDCARD_KEYS.some(k => norm(e.key) === norm(k))) return false;
+      if (typeof e.value !== 'string') return false;
+      return WILDCARD_VALUES.some(v => norm(e.value) === norm(v));
+    });
+    wildcardEntries.slice(0,3).forEach(e => {
+      addFinding('agency', 'high', `Unbounded permission scope: "${e.key}": "${e.value}"`,
+        'This field grants unrestricted scope rather than the minimum needed for the task.', e.path, 'wildcardScope',
+        'Replace wildcard scopes with the specific, minimal set of permissions the workflow actually needs.');
+    });
+    pts -= Math.min(6, wildcardEntries.length * 6);
+    categories.agency = { max: 20, score: Math.max(0, pts), label: 'Agency & Permission Scope' };
+  }
+
+  // 3. Prompt integrity (20)
+  {
+    const promptEntries = entries.filter(e => PROMPT_KEY_NAMES.includes(norm(e.key)) && typeof e.value === 'string');
+    if (promptEntries.length === 0) {
+      categories.prompt = { max: 20, score: 20, label: 'Prompt & Input Integrity', na: true };
+    } else {
+      let pts = 20;
+      const hasSanitizer = anyHintPresent(SANITIZE_HINTS);
+      const risky = promptEntries.filter(e => {
+        const vn = norm(e.value);
+        return UNTRUSTED_SOURCE_HINTS.some(h => vn.includes(norm(h))) && TEMPLATE_VAR_RE.test(e.value);
+      });
+      if (risky.length > 0 && !hasSanitizer) {
+        pts -= 14;
+        risky.slice(0,3).forEach(e => {
+          addFinding('prompt', 'critical', 'Untrusted content interpolated directly into a prompt',
+            `Prompt field "${e.key}" appears to interpolate content from an untrusted source with no sanitization layer detected anywhere in the workflow.`,
+            e.path, 'promptInjection',
+            'Treat all externally-sourced content as untrusted: strip or escape it, clearly delimit it from instructions, and/or run it through a content filter before it reaches the prompt.');
+        });
+      } else if (risky.length > 0 && hasSanitizer) {
+        pts -= 5;
+        addFinding('prompt', 'medium', 'Untrusted content reaches a prompt, but a sanitization layer exists',
+          'A sanitize/validate/filter node is present in the workflow. Static analysis cannot confirm it actually covers this specific prompt input.',
+          risky[0].path, 'promptInjection',
+          'Verify the sanitization step is applied to this specific input path before it reaches the prompt.');
+      }
+      if (!hasSanitizer) {
+        pts = Math.min(pts, 14);
+        addFinding('prompt', risky.length > 0 ? 'high' : 'low', 'No sanitization layer detected for prompt-bound content',
+          'The workflow has prompt-driven nodes but no node referencing sanitize, validate, moderation, or content-filter.',
+          promptEntries[0].path, 'noSanitizer',
+          'Add an input-sanitization or content-moderation step upstream of any node that feeds text into a prompt.');
+      }
+      categories.prompt = { max: 20, score: Math.max(0, pts), label: 'Prompt & Input Integrity' };
+    }
+  }
+
+  // 4. Code execution (15)
+  {
+    const codeByKeyName = entries.filter(e => CODE_KEY_NAMES.includes(norm(e.key)) && typeof e.value === 'string' && e.value.trim().length > 3);
+    const codeByType = entries.filter(e => ['type','nodetype'].includes(norm(e.key)) && typeof e.value === 'string' && CODE_TYPE_HINTS.some(h => norm(e.value).includes(norm(h))));
+    const codeNodes = dedupeByParent([...codeByKeyName, ...codeByType]);
+    if (codeNodes.length === 0) {
+      categories.execution = { max: 15, score: 15, label: 'Code & Command Execution', na: true };
+    } else {
+      let pts = 15;
+      const hasSandbox = anyHintPresent(SANDBOX_HINTS);
+      if (!hasSandbox) {
+        pts -= Math.min(15, 6 * codeNodes.length);
+        codeNodes.slice(0,5).forEach(e => {
+          addFinding('execution', 'high', `Unsandboxed code-execution node ("${e.key}")`,
+            'A code/script/exec-type node was found with no sandbox, timeout, or restricted-execution flag detected anywhere in the workflow.',
+            e.path, 'unsandboxedCode',
+            'Run generated or user-influenced code in a sandboxed, non-root, network-restricted environment with a strict timeout, and validate it before execution.');
+        });
+        if (codeNodes.length >= 2) gradeFloor = gradeFloor === 'F' ? 'F' : 'D';
+      } else {
+        pts -= 3;
+        addFinding('execution', 'low', 'Code-execution node found — sandbox indicator present',
+          'A sandbox/timeout/restricted hint exists in the workflow. Static analysis cannot confirm the code node specifically runs inside it.',
+          codeNodes[0].path, 'unsandboxedCode',
+          'Confirm the sandboxing control is actually applied to this code-execution node.');
+      }
+      categories.execution = { max: 15, score: Math.max(0, pts), label: 'Code & Command Execution' };
+    }
+  }
+
+  // 5. Human oversight (15)
+  {
+    const hasApproval = anyHintPresent(APPROVAL_HINTS);
+    const hasError = anyHintPresent(ERROR_HINTS);
+    const hasLogging = anyHintPresent(LOGGING_HINTS);
+    let pts = 0;
+    if (hasApproval) pts += 5; else addFinding('oversight', 'medium', 'No approval / human-in-the-loop node found', 'The workflow has no node referencing approval, human review, or manual confirmation anywhere.', null, 'noApproval', 'Add at least one human-approval checkpoint for high-impact actions.');
+    if (hasError) pts += 5; else addFinding('oversight', 'medium', 'No error/failure handling found', 'No on-error, catch, fallback, or retry path was detected in the workflow.', null, 'noErrorHandling', 'Add explicit error handling so failures degrade safely instead of silently propagating.');
+    if (hasLogging) pts += 5; else addFinding('oversight', 'low', 'No logging / audit trail found', 'No node referencing logging, auditing, or trace output was detected.', null, 'noLogging', 'Add an audit-logging step so agent actions are reviewable after the fact.');
+    if (destructiveActionCount > 0 && !hasApproval && !hasError) {
+      gradeFloor = gradeFloor === 'F' ? 'F' : 'D';
+    }
+    categories.oversight = { max: 15, score: pts, label: 'Human Oversight & Control Flow' };
+  }
+
+  // 6. Data handling (10)
+  {
+    const piiPresent = entries.some(e => PII_KEY_NAMES.includes(norm(e.key)));
+    if (!piiPresent) {
+      categories.data = { max: 10, score: 10, label: 'Data Handling & Third-Party Exposure', na: true };
+    } else {
+      const externalPresent = anyHintPresent(EXTERNAL_DEST_HINTS);
+      const hasRedaction = anyHintPresent(REDACT_HINTS);
+      let pts = 10;
+      if (externalPresent && !hasRedaction) {
+        pts -= 8;
+        addFinding('data', 'high', 'PII-shaped fields may reach an external destination unredacted',
+          'The workflow contains fields that look like personal data alongside references to external/third-party/webhook destinations, with no redact/mask/anonymize step detected.',
+          null, 'piiExposure',
+          'Add a redaction or masking step before personal data reaches any external destination, or confirm the destination is an approved processor under your data agreements.');
+      } else if (externalPresent && hasRedaction) {
+        pts -= 2;
+      }
+      categories.data = { max: 10, score: Math.max(0, pts), label: 'Data Handling & Third-Party Exposure' };
+    }
+  }
+
+  const totalScore = Object.values(categories).reduce((s, c) => s + c.score, 0);
+  const totalMax = Object.values(categories).reduce((s, c) => s + c.max, 0);
+
+  let grade;
+  if (totalScore >= 90) grade = 'A';
+  else if (totalScore >= 75) grade = 'B';
+  else if (totalScore >= 55) grade = 'C';
+  else if (totalScore >= 35) grade = 'D';
+  else grade = 'F';
+  if (gradeFloor === 'F') grade = 'F';
+  else if (gradeFloor === 'D' && ['A','B','C'].includes(grade)) grade = 'D';
+
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  findings.sort((a,b) => sevOrder[a.severity] - sevOrder[b.severity]);
+
+  return { totalScore, totalMax, grade, categories, findings, gradeFloor };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Page logic: session guard, upload, render
+// ═══════════════════════════════════════════════════════════════
+let MODE = null, EMAIL = '', USER_ID = null;
+
+async function initSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem('aisc_session'));
+    if (s && s.email) { MODE = 'demo'; EMAIL = s.email; return true; }
+  } catch(e) {}
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && data.session.user) { MODE = 'supabase'; EMAIL = data.session.user.email; USER_ID = data.session.user.id; return true; }
+  return false;
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (MODE === 'supabase') await sb.auth.signOut();
+  else localStorage.removeItem('aisc_session');
+  window.location.href = 'login.html';
+});
+
+async function hasWorkflowAssessmentAccess() {
+  // Demo accounts show the fully-featured tool for sales-demo purposes —
+  // there's no real Stripe customer behind a demo login to check a plan on.
+  if (MODE === 'demo') return true;
+  const { data, error } = await sb.from('profiles').select('plan').eq('id', USER_ID).maybeSingle();
+  if (error) return false;
+  return ['professional', 'team', 'enterprise'].includes(data?.plan);
+}
+
+(async () => {
+  const ok = await initSession();
+  if (!ok) { window.location.href = 'login.html'; return; }
+  document.getElementById('appShell').classList.add('visible');
+
+  const allowed = await hasWorkflowAssessmentAccess();
+  if (!allowed) {
+    document.getElementById('uploadView').style.display = 'none';
+    document.getElementById('upsellView').style.display = 'block';
+  }
+})();
+
+// ── Upload handling ──
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const uploadError = document.getElementById('uploadError');
+const scanProgress = document.getElementById('scanProgress');
+const scanBarFill = document.getElementById('scanBarFill');
+const scanProgressText = document.getElementById('scanProgressText');
+
+function showUploadError(msg) {
+  uploadError.textContent = msg;
+  uploadError.classList.add('show');
+}
+function clearUploadError() {
+  uploadError.classList.remove('show');
+}
+
+['dragenter','dragover'].forEach(evt => {
+  dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(evt => {
+  dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); });
+});
+dropzone.addEventListener('drop', (e) => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+});
+
+function handleFile(file) {
+  clearUploadError();
+  if (!/\.json$/i.test(file.name)) {
+    showUploadError('That doesn\'t look like a .json file. Export your workflow as JSON and try again.');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showUploadError('File is larger than 5 MB. Trim the workflow export or contact us if this is a legitimate file.');
+    return;
+  }
+  document.getElementById('fileChipWrap').innerHTML = `<div class="file-chip">📄 ${file.name} · ${(file.size/1024).toFixed(1)} KB</div>`;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let json;
+    try {
+      json = JSON.parse(e.target.result);
+    } catch (err) {
+      showUploadError('Couldn\'t parse that file as JSON: ' + err.message);
+      return;
+    }
+    if (typeof json !== 'object' || json === null) {
+      showUploadError('The file parsed, but isn\'t a JSON object or array we can scan.');
+      return;
+    }
+    runScan(json, file.name);
+  };
+  reader.onerror = () => showUploadError('Could not read that file. Try again.');
+  reader.readAsText(file);
+}
+
+function runScan(json, filename) {
+  scanProgress.classList.add('show');
+  const steps = ['Parsing workflow…','Checking credentials…','Checking agency & permissions…','Checking prompt integrity…','Checking code execution…','Checking oversight & data handling…','Scoring…'];
+  let i = 0;
+  const interval = setInterval(() => {
+    i++;
+    scanBarFill.style.width = Math.min(100, (i/steps.length)*100) + '%';
+    scanProgressText.textContent = steps[Math.min(i, steps.length-1)];
+    if (i >= steps.length) {
+      clearInterval(interval);
+      setTimeout(() => {
+        const result = scanWorkflow(json);
+        renderResults(result, filename);
+      }, 250);
+    }
+  }, 180);
+}
+
+let lastResult = null, lastFilename = '';
+
+function gradeClass(g) { return { A:'rg-a', B:'rg-b', C:'rg-c', D:'rg-d', F:'rg-f' }[g]; }
+function barColor(g) { return { A:'var(--grade-a)', B:'var(--grade-b)', C:'var(--grade-c)', D:'var(--grade-d)', F:'var(--grade-f)' }[g]; }
+function scoreToGrade(score, max) {
+  const pct = score / max;
+  if (pct >= 0.9) return 'A'; if (pct >= 0.75) return 'B'; if (pct >= 0.55) return 'C'; if (pct >= 0.35) return 'D'; return 'F';
+}
+const GRADE_TITLES = {
+  A: 'Low risk', B: 'Minor gaps', C: 'Moderate risk', D: 'High risk', F: 'Critical risk',
+};
+const GRADE_SUBS = {
+  A: 'Safe for standard deployment review. No unmitigated findings in any category.',
+  B: 'Deploy after addressing the specific findings below.',
+  C: 'Remediation recommended before production use.',
+  D: 'Do not deploy without fixes and explicit sign-off.',
+  F: 'Do not deploy. Review every critical and high finding below before proceeding.',
+};
+
+function renderResults(result, filename) {
+  lastResult = result; lastFilename = filename;
+  document.getElementById('uploadView').style.display = 'none';
+  document.getElementById('resultsView').classList.add('visible');
+
+  document.getElementById('resultHero').innerHTML = `
+    <div class="result-grade-ring ${gradeClass(result.grade)}">${result.grade}</div>
+    <div class="result-hero-meta">
+      <div class="result-hero-file">${filename}</div>
+      <div class="result-hero-title">${GRADE_TITLES[result.grade]}${result.gradeFloor ? ' <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5)">(grade floor applied)</span>' : ''}</div>
+      <div class="result-hero-sub">${GRADE_SUBS[result.grade]}</div>
+    </div>
+    <div class="result-hero-score">
+      <div class="result-hero-score-num">${result.totalScore}<span style="font-size:16px;color:rgba(255,255,255,.4)">/${result.totalMax}</span></div>
+      <div class="result-hero-score-lbl">overall score</div>
+    </div>`;
+
+  document.getElementById('catGrid').innerHTML = Object.values(result.categories).map(c => {
+    const g = scoreToGrade(c.score, c.max);
+    const pct = Math.round((c.score/c.max)*100);
+    return `<div class="cat-card">
+      <div class="cat-card-top"><div class="cat-card-name">${c.label}</div><div class="cat-card-score">${c.score}/${c.max}</div></div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${barColor(g)}"></div></div>
+      ${c.na ? '<div class="cat-na">Not applicable — no matching nodes detected</div>' : ''}
+    </div>`;
+  }).join('');
+
+  renderFindings('all');
+
+  document.querySelectorAll('.sev-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFindings(btn.getAttribute('data-sev'));
+    });
+  });
+}
+
+function renderFindings(filter) {
+  const list = document.getElementById('findingsList');
+  const items = filter === 'all' ? lastResult.findings : lastResult.findings.filter(f => f.severity === filter);
+  if (items.length === 0) {
+    list.innerHTML = '<div class="no-findings">No findings in this category. 🎉</div>';
+    return;
+  }
+  list.innerHTML = items.map(f => `
+    <div class="finding-card fc-${f.severity}">
+      <div class="finding-top">
+        <span class="sev-pill sp-${f.severity}">${f.severity}</span>
+        <span class="finding-title">${f.title}</span>
+      </div>
+      <div class="finding-detail">${f.detail}</div>
+      ${f.path ? `<div class="finding-path">${f.path}</div>` : ''}
+      <div class="finding-remediation"><strong>Fix:</strong> ${f.remediation}</div>
+      <div class="finding-fw">${f.frameworks.map(fw => `<span class="fw-tag fw-${fw.fw}">${fw.fw === 'atlas' ? 'MITRE ATLAS' : fw.fw === 'nist' ? 'NIST AI RMF' : 'OWASP'} ${fw.id}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+document.getElementById('runAnotherBtn').addEventListener('click', () => {
+  document.getElementById('resultsView').classList.remove('visible');
+  document.getElementById('uploadView').style.display = 'block';
+  document.getElementById('fileChipWrap').innerHTML = '';
+  scanProgress.classList.remove('show');
+  scanBarFill.style.width = '0';
+  fileInput.value = '';
+  clearUploadError();
+});
+
+document.getElementById('downloadReportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ file: lastFilename, assessedAt: new Date().toISOString(), ...lastResult }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = lastFilename.replace(/\.json$/i, '') + '-security-report.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>

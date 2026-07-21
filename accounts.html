@@ -7,6 +7,22 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ════════ Supabase config — fill in your project's values ════════
+     Find these in your Supabase project: Settings → API
+       SUPABASE_URL      → "Project URL"
+       SUPABASE_ANON_KEY → "anon public" key
+     See supabase-schema.sql for the tables/policies this page depends on.
+     NOTE: approve/deny actions below write to the `signup_decisions` table
+     using this anon key, gated only by the client-side admin password —
+     the same trust level as the app had before. See the note in
+     supabase-schema.sql if you want to harden this later. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://fyptyekudncxgehnyehz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_-kFwdNoBFI9fANSyVeBOwg_-LYkx6HS';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -519,10 +535,55 @@ document.getElementById('adminPass').addEventListener('keydown',e=>{if(e.key==='
 document.getElementById('signOutBtn').addEventListener('click',()=>{try{localStorage.removeItem('aisc_admin')}catch(e){}location.reload()});
 
 // ═══ DATA ════════════════════════════════════════════════════════════
-const K={rows:'aisc_sheet_rows',dec:'aisc_decisions',allowed:'aisc_allowed',denied:'aisc_denied',passwords:'aisc_passwords',url:'aisc_script_url'};
+// K.rows/K.url stay in localStorage — that's just a cache of the Google
+// Sheet fetch, not account data. Everything about *decisions* (approve/
+// deny/setup status) now lives in Supabase's signup_decisions table.
+const K={rows:'aisc_sheet_rows',url:'aisc_script_url'};
 const load=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}};
-const loadObj=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return{}}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+// In-memory cache of Supabase signup_decisions, keyed by email
+let DECISIONS = {};
+async function loadDecisions(){
+  const {data,error}=await sb.from('signup_decisions').select('*');
+  if(error){toast('Supabase error: '+error.message,'⚠️');return;}
+  DECISIONS={};
+  (data||[]).forEach(d=>DECISIONS[d.email]=d);
+}
+function getStatus(email){ return DECISIONS[email]?.status || 'pending'; }
+function getSetupCompleted(email){ return !!DECISIONS[email]?.setup_completed; }
+
+async function upsertDecision(email,status,row){
+  const payload={
+    email,status,
+    first_name: row?.first ?? DECISIONS[email]?.first_name ?? '',
+    last_name:  row?.last  ?? DECISIONS[email]?.last_name  ?? '',
+    company:    row?.company ?? DECISIONS[email]?.company ?? '',
+    title:      row?.title ?? DECISIONS[email]?.title ?? '',
+    decided_at: new Date().toISOString(),
+  };
+  const {error}=await sb.from('signup_decisions').upsert(payload,{onConflict:'email'});
+  if(error){toast('Save failed: '+error.message,'⚠️');return false;}
+  DECISIONS[email]=Object.assign(DECISIONS[email]||{},payload);
+  return true;
+}
+async function deleteDecision(email){
+  const {error}=await sb.from('signup_decisions').delete().eq('email',email);
+  if(error){toast('Failed: '+error.message,'⚠️');return false;}
+  delete DECISIONS[email];
+  return true;
+}
+async function saveNoteRemote(email,note){
+  const {error}=await sb.from('signup_decisions').update({note}).eq('email',email);
+  if(error){toast('Failed to save note','⚠️');return false;}
+  if(DECISIONS[email])DECISIONS[email].note=note;
+  return true;
+}
+function setupLink(email){ return 'setup.html?email='+encodeURIComponent(email); }
+function copySetupLink(email){
+  navigator.clipboard.writeText(location.href.replace(/accounts\.html.*$/,'')+setupLink(email))
+    .then(()=>toast('Setup link copied — send it to '+email,'🔗'));
+}
 
 // ═══ COLUMN MAPPING ══════════════════════════════════════════════════
 // Google Form fields (in sheet order):
@@ -592,12 +653,6 @@ function ini(f,l){return((f||'')[0]||'').toUpperCase()+((l||'')[0]||'').toUpperC
 function planCls(p){if(!p)return'pl-free';if(/ent/i.test(p))return'pl-ent';if(/pro/i.test(p))return'pl-pro';return'pl-free'}
 function planLbl(p){if(!p)return'Free';if(/ent/i.test(p))return'Enterprise';if(/pro/i.test(p))return'Professional';return'Free'}
 function fmtTs(ts){if(!ts)return'—';const d=new Date(ts);if(isNaN(d))return ts;const diff=(Date.now()-d)/1000;if(diff<60)return'Just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';if(diff<604800)return Math.floor(diff/86400)+'d ago';return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
-function getStatus(email){
-  const dec=loadObj(K.dec);if(dec[email])return dec[email].status;
-  if(load(K.allowed).some(a=>a.email===email))return'approved';
-  if(load(K.denied).some(a=>a.email===email))return'denied';
-  return'pending';
-}
 
 // ═══ RENDER ═══════════════════════════════════════════════════════════
 let selRows=new Set(),curRow=null,pendAct=null;
@@ -662,51 +717,35 @@ function rowHTML(r){
 
 // ═══ LISTS ════════════════════════════════════════════════════════════
 function renderLists(){
-  const al=load(K.allowed),dl=load(K.denied);
+  const al=Object.values(DECISIONS).filter(d=>d.status==='approved');
+  const dl=Object.values(DECISIONS).filter(d=>d.status==='denied');
   document.getElementById('allowCount').textContent=al.length;
   document.getElementById('denyCount').textContent=dl.length;
   document.getElementById('allowBadgeSb').textContent=al.length;
   document.getElementById('denyBadgeSb').textContent=dl.length;
   const ai=document.getElementById('allowItems');
-  ai.innerHTML=al.length===0?'<div class="list-empty">No approved accounts yet.</div>':al.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${a.name||''}</div></div><button class="li-remove" onclick="removeList('allowed','${a.email}')">✕</button></div>`).join('');
+  ai.innerHTML=al.length===0?'<div class="list-empty">No approved accounts yet.</div>':al.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${(a.first_name||'')+' '+(a.last_name||'')}${a.setup_completed?' · <span style="color:var(--green)">setup done</span>':' · <span style="color:var(--amber)">setup pending</span>'}</div></div><button class="li-remove" onclick="removeList('${a.email}')">✕</button></div>`).join('');
   const di=document.getElementById('denyItems');
-  di.innerHTML=dl.length===0?'<div class="list-empty">No denied accounts.</div>':dl.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${a.name||''}</div></div><button class="li-remove" onclick="removeList('denied','${a.email}')">✕</button></div>`).join('');
+  di.innerHTML=dl.length===0?'<div class="list-empty">No denied accounts.</div>':dl.map(a=>`<div class="list-item"><div><div class="li-email">${a.email}</div><div class="li-name">${(a.first_name||'')+' '+(a.last_name||'')}</div></div><button class="li-remove" onclick="removeList('${a.email}')">✕</button></div>`).join('');
 }
 
-function addToList(type,email,name){
-  email=(email||'').toLowerCase().trim();if(!email||!email.includes('@'))return;
-  if(type==='allowed'){
-    let l=load(K.allowed);if(l.some(a=>a.email===email))return;
-    save(K.denied,load(K.denied).filter(a=>a.email!==email));
-    l.push({email,name:name||''});save(K.allowed,l);
-  } else {
-    let l=load(K.denied);if(l.some(a=>a.email===email))return;
-    save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
-    l.push({email,name:name||''});save(K.denied,l);
-  }
+async function removeList(email){
+  await deleteDecision(email);
+  render();toast('Reset to pending','✓');
 }
 
-function removeList(type,email){
-  if(type==='allowed')save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
-  else save(K.denied,load(K.denied).filter(a=>a.email!==email));
-  const d=loadObj(K.dec);delete d[email];save(K.dec,d);
-  const p=loadObj(K.passwords);delete p[email];save(K.passwords,p);
-  render();toast('Removed from '+(type==='allowed'?'allow':'deny')+' list','✓');
-}
-
-function manualAdd(type){
+async function manualAdd(type){
   const id=type==='allowed'?'allowManual':'denyManual';
   const email=document.getElementById(id).value.trim().toLowerCase();
   if(!email||!email.includes('@')){toast('Enter a valid email','⚠️');return}
-  addToList(type,email,'');
-  const d=loadObj(K.dec);d[email]={status:type==='allowed'?'approved':'denied',at:new Date().toISOString(),by:'admin'};save(K.dec,d);
+  await upsertDecision(email,type==='allowed'?'approved':'denied',null);
   document.getElementById(id).value='';render();
   toast('Added to '+(type==='allowed'?'allow':'deny')+' list','✓');
 }
 
 function exportList(type){
-  const l=type==='allowed'?load(K.allowed):load(K.denied);
-  const csv=['email,name',...l.map(a=>`"${a.email}","${a.name||''}"`)].join('\n');
+  const l=Object.values(DECISIONS).filter(d=>d.status===(type==='allowed'?'approved':'denied'));
+  const csv=['email,name,setup_completed',...l.map(a=>`"${a.email}","${(a.first_name||'')+' '+(a.last_name||'')}","${a.setup_completed?'yes':'no'}"`)].join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download=type+'-list-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   toast('Exported '+type+' list','📊');
@@ -719,12 +758,13 @@ function quickDecide(email,status){
   const ov=document.getElementById('confOverlay');
   const ico=document.getElementById('confIcon'),ttl=document.getElementById('confTitle'),sub=document.getElementById('confSub');
   const ok=document.getElementById('confOk'),pws=document.getElementById('pwSection');
+  pws.style.display='none';
   if(status==='approved'){
     ico.className='conf-icon ci-a';ico.textContent='✓';ttl.textContent='Approve account';
-    ok.className='conf-ok co-a';ok.textContent='Approve & set password';pws.style.display='block';genConfPw();
+    ok.className='conf-ok co-a';ok.textContent='Approve';
   } else {
     ico.className='conf-icon ci-d';ico.textContent='✗';ttl.textContent='Deny application';
-    ok.className='conf-ok co-d';ok.textContent='Confirm denial';pws.style.display='none';
+    ok.className='conf-ok co-d';ok.textContent='Confirm denial';
   }
   sub.textContent=(row?row.first+' '+row.last:email)+(row&&row.company?' · '+row.company:'');
   ov.classList.add('open');
@@ -733,56 +773,33 @@ function quickDecide(email,status){
 async function execConf(){
   if(!pendAct)return;
   const{email,status,row}=pendAct;
-  if(status==='approved'){
-    const pw=document.getElementById('confPw').value.trim();
-    if(!pw){toast('Set a password first','⚠️');return}
-    const hash=await sha256(pw);
-    const passwords=loadObj(K.passwords);passwords[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,passwords);
-    addToList('allowed',email,row?`${row.first} ${row.last}`:'');
-  } else {
-    addToList('denied',email,row?`${row.first} ${row.last}`:'');
-  }
-  const d=loadObj(K.dec);d[email]={status,at:new Date().toISOString(),by:'admin'};save(K.dec,d);
+  const ok=await upsertDecision(email,status,row);
+  if(!ok)return;
   closeConf();if(curRow&&curRow.email===email){const rows=load(K.rows);curRow=rows.find(r=>r.email===email);refreshDrawer()}
   render();
-  toast(status==='approved'?'Account approved — password set':'Application denied',status==='approved'?'✓':'✗');
-  if(status==='approved'){
-    const pw=document.getElementById('confPw').value.trim();
-    setTimeout(()=>toast(`Temp password for ${email}: ${pw}`,'🔑'),500);
-  }
+  toast(status==='approved'?'Approved — share the setup link so they can finish setup':'Application denied',status==='approved'?'✓':'✗');
 }
 
-function undoDec(email){
-  const d=loadObj(K.dec);delete d[email];save(K.dec,d);
-  save(K.allowed,load(K.allowed).filter(a=>a.email!==email));
-  save(K.denied,load(K.denied).filter(a=>a.email!==email));
-  const p=loadObj(K.passwords);delete p[email];save(K.passwords,p);
+async function undoDec(email){
+  await deleteDecision(email);
   if(curRow&&curRow.email===email)refreshDrawer();render();
   toast('Reversed — back to pending','↩');
 }
 
 function closeConf(){document.getElementById('confOverlay').classList.remove('open');pendAct=null}
-function genConfPw(){const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';document.getElementById('confPw').value=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('')}
 
 // ═══ BULK ═════════════════════════════════════════════════════════════
 function toggleSel(email,cb){if(cb.checked)selRows.add(email);else selRows.delete(email);updBulk()}
 function updBulk(){const b=document.getElementById('bulkBar');document.getElementById('bulkLbl').textContent=selRows.size+' selected';b.style.display=selRows.size>0?'flex':'none'}
 async function bulkAction(status){
-  const rows=load(K.rows);const d=loadObj(K.dec);let n=0;
-  for(const email of selRows){
-    d[email]={status,at:new Date().toISOString(),by:'admin'};
+  const rows=load(K.rows);let n=0;
+  await Promise.all(Array.from(selRows).map(async email=>{
     const row=rows.find(r=>r.email===email);
-    if(status==='approved'){
-      const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-      const pw=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('');
-      const hash=await sha256(pw);
-      const passwords=loadObj(K.passwords);passwords[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,passwords);
-      addToList('allowed',email,row?`${row.first} ${row.last}`:'');
-    } else addToList('denied',email,row?`${row.first} ${row.last}`:'');
-    n++;
-  }
-  save(K.dec,d);selRows.clear();updBulk();render();
-  toast(n+' account'+(n!==1?'s':'')+' '+status+(status==='approved'?' — passwords auto-generated':''),status==='approved'?'✓':'✗');
+    const ok=await upsertDecision(email,status,row);
+    if(ok)n++;
+  }));
+  selRows.clear();updBulk();render();
+  toast(n+' account'+(n!==1?'s':'')+' '+status+(status==='approved'?' — share setup links to activate':''),status==='approved'?'✓':'✗');
 }
 
 // ═══ DRAWER ═══════════════════════════════════════════════════════════
@@ -790,7 +807,7 @@ function openDrawer(email){const rows=load(K.rows);curRow=rows.find(r=>r.email==
 
 function refreshDrawer(){
   const r=curRow;if(!r)return;
-  const col=avc(r.email);const st=getStatus(r.email);const pws=loadObj(K.passwords);const pe=pws[r.email];const dec=loadObj(K.dec);
+  const col=avc(r.email);const st=getStatus(r.email);const dec=DECISIONS[r.email]||{};
   document.getElementById('drAv').style.background=col;document.getElementById('drAv').textContent=ini(r.first,r.last);
   document.getElementById('drName').textContent=`${r.first} ${r.last}`;document.getElementById('drEmail').textContent=r.email;
   const concerns=(r.concerns||'').toString().split(',').map(c=>c.trim()).filter(Boolean);
@@ -808,42 +825,46 @@ function refreshDrawer(){
       </div></div>
     ${concerns.length?`<div class="dr-section"><div class="dr-sec-title">Security concerns</div><div>${concerns.map(c=>`<span class="concern-tag">${c}</span>`).join('')}</div></div>`:''}
     ${r.tools?`<div class="dr-section"><div class="dr-sec-title">AI tools to score</div><div style="font-size:13px;color:var(--slate);line-height:1.6">${r.tools}</div></div>`:''}
-    ${st==='approved'?`<div class="dr-section"><div class="dr-sec-title">Access credentials</div>
-      ${pe?`<div style="background:var(--green-lt);border:1px solid rgba(29,158,117,.2);border-radius:8px;padding:12px 14px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">ACCESS GRANTED</div>
-        <div style="font-family:var(--mono);font-size:13px;color:var(--navy)">${r.email}</div>
-        ${pe.temp?`<div style="font-size:12px;color:var(--slate-lt);margin-top:4px">Temp password: <strong style="font-family:var(--mono);color:var(--navy)">${pe.temp}</strong></div>`:'<div style="font-size:12px;color:var(--slate-lt);margin-top:4px">Password set (not retrievable)</div>'}
-      </div>`:''}
-      <div class="pw-row"><input class="pw-inp" type="text" id="newPw" placeholder="Set new password"><button class="pw-gen" onclick="genNewPw()">Gen</button><button class="pw-set" onclick="setNewPw('${r.email}')">Update</button></div>
-      <div class="pw-note">Share passwords via a secure channel. Stored as SHA-256 hash — not retrievable once saved.</div></div>`:''}
+    ${st==='approved'?`<div class="dr-section"><div class="dr-sec-title">Account setup</div>
+      ${dec.setup_completed?`<div style="background:var(--green-lt);border:1px solid rgba(29,158,117,.2);border-radius:8px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">ACCOUNT ACTIVE</div>
+        <div style="font-size:12px;color:var(--slate-lt)">They've created a password and can log in anytime.</div>
+      </div>`:`<div style="background:var(--amber-lt);border:1px solid rgba(250,199,117,.35);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:#B45309;margin-bottom:4px">SETUP PENDING</div>
+        <div style="font-size:12px;color:var(--slate-lt)">Send them this link to create a password and pick their AI products.</div>
+      </div>
+      <div class="pw-row"><input class="pw-inp" type="text" readonly value="${setupLink(r.email)}" onclick="this.select()"><button class="pw-set" onclick="copySetupLink('${r.email}')">Copy link</button></div>`}
+    </div>`:''}
     <div class="dr-section"><div class="dr-sec-title">Admin note</div>
-      <textarea class="note-area" id="noteArea" placeholder="Add an internal note…">${dec[r.email]?.note||''}</textarea>
+      <textarea class="note-area" id="noteArea" placeholder="Add an internal note…">${dec.note||''}</textarea>
       <button class="save-note" onclick="saveNote('${r.email}')">Save note</button></div>`;
   const foot=document.getElementById('drFoot');
   if(st==='pending'){
     foot.innerHTML=`<button class="dr-btn db-d" onclick="quickDecide('${r.email}','denied')">✗ Deny</button><button class="dr-btn db-a" onclick="quickDecide('${r.email}','approved')">✓ Approve</button>`;
   } else {
-    foot.innerHTML=`<div class="decided-strip ${st==='approved'?'ds-a':'ds-d'}">${st==='approved'?'✓ Approved':'✗ Denied'} — ${fmtTs(dec[r.email]?.at)}</div><button class="dr-btn db-u" onclick="undoDec('${r.email}')">↩ Undo</button>`;
+    foot.innerHTML=`<div class="decided-strip ${st==='approved'?'ds-a':'ds-d'}">${st==='approved'?'✓ Approved':'✗ Denied'} — ${fmtTs(dec.decided_at)}</div><button class="dr-btn db-u" onclick="undoDec('${r.email}')">↩ Undo</button>`;
   }
 }
 
-function genNewPw(){const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';document.getElementById('newPw').value=Array.from({length:10},()=>c[Math.floor(Math.random()*c.length)]).join('')}
-async function setNewPw(email){
-  const pw=document.getElementById('newPw').value.trim();if(!pw){toast('Enter a password','⚠️');return}
-  const hash=await sha256(pw);const p=loadObj(K.passwords);p[email]={hash,set:new Date().toISOString(),temp:pw};save(K.passwords,p);
-  refreshDrawer();toast('Password updated for '+email,'🔑');
-  setTimeout(()=>toast('New password: '+pw,'🔑'),400);
+async function saveNote(email){
+  const note=document.getElementById('noteArea').value;
+  await saveNoteRemote(email,note);
+  toast('Note saved','📝');
 }
-function saveNote(email){const note=document.getElementById('noteArea').value;const d=loadObj(K.dec);if(!d[email])d[email]={status:'pending'};d[email].note=note;save(K.dec,d);toast('Note saved','📝')}
+
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');curRow=null}
 
 // ═══ EXPORT / CLEAR ═══════════════════════════════════════════════════
 document.getElementById('exportBtn').addEventListener('click',()=>{
-  const rows=load(K.rows);const d=loadObj(K.dec);
-  const csv=[['Email','First','Last','Company','Title','Size','Plan','Status','Applied','Note'].join(','),...rows.map(r=>[r.email,r.first,r.last,r.company,r.title,r.size,planLbl(r.plan),getStatus(r.email),r.timestamp,d[r.email]?.note||''].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
+  const rows=load(K.rows);
+  const csv=[['Email','First','Last','Company','Title','Size','Plan','Status','Applied','Setup Completed','Note'].join(','),...rows.map(r=>[r.email,r.first,r.last,r.company,r.title,r.size,planLbl(r.plan),getStatus(r.email),r.timestamp,getSetupCompleted(r.email)?'yes':'no',DECISIONS[r.email]?.note||''].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='accounts-'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('Exported','📊');
 });
-function clearData(){if(!confirm('Clear all locally stored responses, decisions, and passwords?'))return;Object.values(K).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});document.getElementById('scriptUrl').value='';setConn('idle');render();toast('Cleared','🗑️')}
+function clearData(){
+  if(!confirm('Clear the locally cached Google Sheet responses? This does NOT touch approved/denied accounts in Supabase — those are shared data, not local cache.'))return;
+  Object.values(K).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  document.getElementById('scriptUrl').value='';setConn('idle');render();toast('Local cache cleared','🗑️');
+}
 function scrollToLists(){document.getElementById('lists').scrollIntoView({behavior:'smooth'})}
 
 // ═══ MISC ═════════════════════════════════════════════════════════════
@@ -857,7 +878,11 @@ function copyScript(){
 let toastT;
 function toast(msg,ico='✓'){document.getElementById('toastMsg').textContent=msg;document.getElementById('toastIco').textContent=ico;const t=document.getElementById('toast');t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),4000)}
 
-function init(){const u=localStorage.getItem(K.url)||'';if(u)document.getElementById('scriptUrl').value=u;render()}
+async function init(){
+  const u=localStorage.getItem(K.url)||'';if(u)document.getElementById('scriptUrl').value=u;
+  await loadDecisions();
+  render();
+}
 </script>
 </body>
 </html>

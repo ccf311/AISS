@@ -6,6 +6,18 @@
 <title>Sign in — AI Security Scorecard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ════════ Supabase config — fill in your project's values ════════
+     Find these in your Supabase project: Settings → API
+       SUPABASE_URL      → "Project URL"
+       SUPABASE_ANON_KEY → "anon public" key
+     See supabase-schema.sql for the tables/policies this page depends on. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://fyptyekudncxgehnyehz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_-kFwdNoBFI9fANSyVeBOwg_-LYkx6HS';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -264,27 +276,45 @@ body{font-family:var(--body);color:var(--slate);-webkit-font-smoothing:antialias
 </div>
 
 <script>
-// ── Hardcoded demo credentials (always work regardless of allow list) ─
+// ── Hardcoded demo credentials (always work, bypass Supabase entirely —
+//    handy for sales demos without needing a live Supabase project) ────
 const DEMO_CREDENTIALS = [
   {email:'demo@enterprise.com', password:'AIsec2026', name:'Alex Rivera', company:'Meridian Corp', role:'CISO'},
   {email:'admin@company.com',   password:'admin123',  name:'Sam Chen',    company:'Acme Inc',    role:'Security Lead'},
 ];
 
-// ── Data helpers ──────────────────────────────────────────────────────
-async function sha256(s) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+// ── Demo-mode redirect (localStorage-based watchlist, unaffected by Supabase) ──
+// TODO: once dashboard.html exists, first-time demo users with an empty
+// watchlist should probably still land on alerts.html to onboard, but
+// returning demo users should go to dashboard.html instead.
+function postLoginRedirectDemo(email) {
+  window.location.href = 'alerts.html';
 }
-function loadAllowed()   { try { return JSON.parse(localStorage.getItem('aisc_allowed')   || '[]'); } catch(e) { return []; } }
-function loadDenied()    { try { return JSON.parse(localStorage.getItem('aisc_denied')    || '[]'); } catch(e) { return []; } }
-function loadPasswords() { try { return JSON.parse(localStorage.getItem('aisc_passwords') || '{}'); } catch(e) { return {}; } }
-function loadSheetRows() { try { return JSON.parse(localStorage.getItem('aisc_sheet_rows')|| '[]'); } catch(e) { return []; } }
 
-// ── Redirect if already logged in ────────────────────────────────────
-try {
-  const session = JSON.parse(localStorage.getItem('aisc_session'));
-  if (session && session.email) window.location.href = 'dashboard.html';
-} catch(e){}
+// ── Real-account redirect: finished setup → alerts, still onboarding → setup ──
+// TODO: swap 'alerts.html' for 'dashboard.html' once that page exists —
+// alerts.html is a capable stand-in home base for now, not the final home.
+async function postLoginRedirectSupabase(userId) {
+  try {
+    const { count } = await sb.from('watchlist').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+    window.location.href = (count && count > 0) ? 'alerts.html' : 'setup.html';
+  } catch (e) {
+    window.location.href = 'alerts.html';
+  }
+}
+
+// ── Redirect if already logged in — check demo session first, then Supabase ──
+(function checkDemoSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem('aisc_session'));
+    if (session && session.email) { postLoginRedirectDemo(session.email); return true; }
+  } catch(e) {}
+  return false;
+})();
+(async function checkSupabaseSession() {
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && data.session.user) postLoginRedirectSupabase(data.session.user.id);
+})();
 
 // ── Password toggle ───────────────────────────────────────────────────
 const pwInput  = document.getElementById('password');
@@ -336,71 +366,36 @@ async function signIn() {
   btn.classList.add('loading');
   btnText.textContent = 'Signing in…';
 
-  // Small delay for UX
-  await new Promise(r => setTimeout(r, 700));
-
-  // ── Step 1: Check deny list ───────────────────────────────────────
-  const denied = loadDenied();
-  if (denied.some(d => d.email === email)) {
-    btn.classList.remove('loading');
-    btnText.textContent = 'Sign in to dashboard';
-    document.getElementById('email').classList.add('error');
-    showError('Your application was not approved. Contact hello@aisecurityscorecard.com if you believe this is an error.');
-    return;
-  }
-
-  // ── Step 2: Try demo / hardcoded credentials ──────────────────────
+  // ── Demo credentials shortcut ──────────────────────────────────────
   const demoUser = DEMO_CREDENTIALS.find(u => u.email === email && u.password === password);
   if (demoUser) {
+    await new Promise(r => setTimeout(r, 500)); // small delay for UX parity
     const session = { email: demoUser.email, name: demoUser.name, company: demoUser.company, role: demoUser.role, loginTime: Date.now(), remember };
     try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e) {}
-    window.location.href = 'dashboard.html';
+    postLoginRedirectDemo(session.email);
     return;
   }
 
-  // ── Step 3: Check allow list + hashed password ────────────────────
-  const allowed = loadAllowed();
-  const isAllowed = allowed.some(a => a.email === email);
+  // ── Real account — Supabase Auth ───────────────────────────────────
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-  if (isAllowed) {
-    const passwords = loadPasswords();
-    const pwEntry   = passwords[email];
-    if (!pwEntry) {
-      // Approved but no password set yet
-      btn.classList.remove('loading');
-      btnText.textContent = 'Sign in to dashboard';
-      showError('Your account is approved but no password has been set. Contact your administrator.');
-      return;
-    }
-    const inputHash = await sha256(password);
-    if (inputHash === pwEntry.hash) {
-      // Look up user details from sheet rows
-      const rows   = loadSheetRows();
-      const row    = rows.find(r => r.email === email) || {};
-      const name   = [(row.first || ''), (row.last || '')].filter(Boolean).join(' ') || email;
-      const session = { email, name, company: row.company || '', role: row.title || 'User', loginTime: Date.now(), remember };
-      try { localStorage.setItem('aisc_session', JSON.stringify(session)); } catch(e) {}
-      window.location.href = 'dashboard.html';
-      return;
-    } else {
-      btn.classList.remove('loading');
-      btnText.textContent = 'Sign in to dashboard';
-      document.getElementById('password').classList.add('error');
-      document.getElementById('password').value = '';
-      showError('Incorrect password. Try again or contact your administrator.');
-      return;
-    }
-  }
-
-  // ── Step 4: Email not on any list — check if application pending ──
   btn.classList.remove('loading');
   btnText.textContent = 'Sign in to dashboard';
-  document.getElementById('email').classList.add('error');
-  const rows = loadSheetRows();
-  const hasPending = rows.some(r => r.email === email);
-  showError(hasPending
-    ? 'Your application is pending review. You\'ll receive access once approved.'
-    : 'No account found. Join the waitlist to request access.');
+
+  if (error) {
+    document.getElementById('password').classList.add('error');
+    document.getElementById('password').value = '';
+    if (/invalid login credentials/i.test(error.message)) {
+      showError("Incorrect email or password. If you were just approved, finish setup first.");
+    } else if (/email not confirmed/i.test(error.message)) {
+      showError('Please confirm your email address before signing in — check your inbox.');
+    } else {
+      showError(error.message);
+    }
+    return;
+  }
+
+  postLoginRedirectSupabase(data.user.id);
 }
 
 document.getElementById('submitBtn').addEventListener('click', signIn);
