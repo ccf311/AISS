@@ -7,6 +7,19 @@
 <meta name="description" content="Continuous security ratings for AI tools, agents, and workflows. Know the risk before you deploy.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ════════ Supabase config — fill in your project's values ════════
+     Find these in your Supabase project: Settings → API
+       SUPABASE_URL      → "Project URL"
+       SUPABASE_ANON_KEY → "anon public" key
+     See supabase-schema.sql for the tables/policies this depends on. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
 <style>
 /* ── Reset & Tokens ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -257,17 +270,40 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
       <span>AI Security Scorecard</span>
     </a>
     <div class="nav-links">
-      <a href="#how-it-works">How it works</a>
+      <a href="index.html#how-it-works">How it works</a>
       <a href="methodology.html">Methodology</a>
-      <a href="#pricing">Pricing</a>
+      <a href="index.html#pricing">Pricing</a>
       <a href="vendors.html">Vendors</a>
+      <a href="about.html">About</a>
     </div>
     <a href="login.html" class="btn btn-ghost" id="navAuthBtn" style="font-size:13px;padding:10px 20px">Sign in</a>
     <a href="waitlist.html" class="btn btn-primary nav-cta" style="font-size:13px;padding:10px 20px">Get early access</a>
   </div>
 </nav>
 <script>
-(function(){try{var s=JSON.parse(localStorage.getItem('aisc_session'));if(s&&s.email){var b=document.getElementById('navAuthBtn');b.textContent='Dashboard';b.href='dashboard.html';b.style.background='rgba(255,255,255,.1)';}}catch(e){}}());
+(async function(){
+  function markDashboard(){
+    var b=document.getElementById('navAuthBtn');
+    if(!b)return;
+    b.textContent='Dashboard';b.href='dashboard.html';b.style.background='rgba(255,255,255,.1)';
+  }
+  function markPricingCTAs(){
+    // Already-logged-in visitors don't need the waitlist — send them
+    // straight to billing.html to actually subscribe.
+    document.querySelectorAll('[data-plan]').forEach(function(a){
+      a.href = 'billing.html?plan=' + a.getAttribute('data-plan');
+      a.textContent = 'Upgrade now';
+    });
+  }
+  try{
+    var s=JSON.parse(localStorage.getItem('aisc_session'));
+    if(s&&s.email){markDashboard();markPricingCTAs();return;}
+  }catch(e){}
+  try{
+    var res=await sb.auth.getSession();
+    if(res&&res.data&&res.data.session&&res.data.session.user){markDashboard();markPricingCTAs();}
+  }catch(e){}
+})();
 </script>
 
 <!-- ── HERO ── -->
@@ -605,7 +641,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
           <li>5 questionnaires/month</li>
           <li>Score history & trends</li>
         </ul>
-        <a href="waitlist.html" class="btn btn-primary btn-price">Start free trial</a>
+        <a href="waitlist.html" class="btn btn-primary btn-price" id="ctaProfessional" data-plan="professional">Start free trial</a>
       </div>
       <div class="price-card fade-up" style="transition-delay:.16s">
         <div class="subheading">Team</div>
@@ -620,7 +656,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
           <li>GRC integrations</li>
           <li>Priority data refresh</li>
         </ul>
-        <a href="waitlist.html" class="btn btn-outline btn-price">Start free trial</a>
+        <a href="waitlist.html" class="btn btn-outline btn-price" id="ctaTeam" data-plan="team">Start free trial</a>
       </div>
       <div class="price-card fade-up" style="transition-delay:.24s">
         <div class="subheading">Enterprise</div>
@@ -700,7 +736,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
         <a href="waitlist.html" class="btn btn-primary" style="font-size:16px;padding:16px 32px">Start for free →</a>
         <a href="mailto:hello@aisecurityscorecard.com" class="btn btn-ghost" style="font-size:16px;padding:16px 32px">Talk to us</a>
       </div>
-      <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">No credit card required · Cancel anytime · SOC 2 Type II certified</p>
+      <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">No credit card required · Cancel anytime · GDPR compliant</p>
     </div>
   </div>
 </section>
@@ -714,7 +750,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding
           <div class="nav-logo-mark">AI</div>
           <span style="color:rgba(255,255,255,.6);font-size:14px">AI Security Scorecard</span>
         </div>
-        <div class="footer-legal">© 2026 LMT Technology Solutions. All rights reserved.</div>
+        <div class="footer-legal">© 2026 Chain Cyber LLC. All rights reserved.</div>
       </div>
       <div class="footer-links">
         <a href="methodology.html">Methodology</a>
